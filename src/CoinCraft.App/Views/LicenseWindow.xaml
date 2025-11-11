@@ -1,0 +1,32 @@
+<Window x:Class="CoinCraft.App.Views.LicenseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Licença" Height="280" Width="480" WindowStartupLocation="CenterOwner">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Orientation="Vertical">
+            <TextBlock Text="Status da licença:" FontWeight="Bold"/>
+            <TextBlock Text="{Binding StatusText}" Margin="0,4,0,0"/>
+
+            <TextBlock Text="Instalações disponíveis:" FontWeight="Bold" Margin="0,8,0,0"/>
+            <TextBlock Text="{Binding RemainingInstallsText}" Margin="0,4,0,0"/>
+
+            <TextBlock Text="Chave de licença:" FontWeight="Bold" Margin="0,8,0,0"/>
+            <TextBox Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Content="Ativar" Command="{Binding ActivateCommand}" Width="100"/>
+                <Button Content="Comprar" Command="{Binding PurchaseCommand}" Width="100" Margin="8,0,0,0"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

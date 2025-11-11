@@ -5,6 +5,15 @@ namespace CoinCraft.Infrastructure;
 
 public sealed class CoinCraftDbContext : DbContext
 {
+    public CoinCraftDbContext()
+    {
+    }
+
+    public CoinCraftDbContext(DbContextOptions<CoinCraftDbContext> options)
+        : base(options)
+    {
+    }
+
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
@@ -13,12 +22,15 @@ public sealed class CoinCraftDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var dataDir = Path.Combine(appData, "CoinCraft");
-        Directory.CreateDirectory(dataDir);
-        var dbPath = Path.Combine(dataDir, "coincraft.db");
+        if (!optionsBuilder.IsConfigured)
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var dataDir = Path.Combine(appData, "CoinCraft");
+            Directory.CreateDirectory(dataDir);
+            var dbPath = Path.Combine(dataDir, "coincraft.db");
 
-        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

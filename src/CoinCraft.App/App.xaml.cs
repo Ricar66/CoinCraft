@@ -4,6 +4,8 @@ using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using CoinCraft.Infrastructure;
 using CoinCraft.Services;
+using CoinCraft.Services.Licensing;
+using System.Net.Http;
 
 namespace CoinCraft.App;
 
@@ -310,7 +312,29 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         // Tratar exceções não capturadas para evitar fechamento abrupto
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        // Abrir janela principal somente após finalizar a inicialização do banco
+        // Validação de licença antes de abrir a janela principal (com opção de pular em testes)
+        var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
+        if (skipLic != "1")
+        {
+            var httpClient = new HttpClient();
+            var apiClient = new LicenseApiClient(httpClient, "https://licensing.example.com"); // TODO: mover para configuração
+            var licensing = new LicensingService(apiClient);
+
+            var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
+            if (!validRes.IsValid)
+            {
+                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
+                var ok = licWin.ShowDialog();
+                if (licensing.CurrentState != LicenseState.Active)
+                {
+                    MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Shutdown();
+                    return;
+                }
+            }
+        }
+
+        // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
         var main = new MainWindow();
         main.Show();
 
