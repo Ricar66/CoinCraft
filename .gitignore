@@ -1,0 +1,36 @@
+# .NET / Visual Studio
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.iml
+
+# Build artifacts
+*.exe
+*.dll
+*.pdb
+
+# Logs and local databases
+*.log
+*.db
+coincraft.db
+coincraft.log
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Tools
+.DS_Store
+.idea/
+.vscode/
+
+# NuGet
+**/packages/
+*.nupkg
+
+# Rider/Resharper caches
+_ReSharper.Caches/

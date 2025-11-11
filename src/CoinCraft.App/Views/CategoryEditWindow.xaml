@@ -1,0 +1,38 @@
+<Window x:Class="CoinCraft.App.Views.CategoryEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Categoria" Height="340" Width="520" WindowStartupLocation="CenterOwner">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Nome" VerticalAlignment="Center"/>
+            <TextBox x:Name="NomeBox" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Cor (hex)" Grid.Row="1" VerticalAlignment="Center"/>
+            <TextBox x:Name="CorBox" Grid.Row="1" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Ícone" Grid.Row="2" VerticalAlignment="Center"/>
+            <TextBox x:Name="IconeBox" Grid.Row="2" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Subcategoria de" Grid.Row="3" VerticalAlignment="Center"/>
+            <ComboBox x:Name="ParentCombo" Grid.Row="3" Grid.Column="1" Margin="8,0,0,8" DisplayMemberPath="Nome" SelectedValuePath="Id"/>
+
+            <TextBlock Text="Limite Mensal" Grid.Row="4" VerticalAlignment="Center"/>
+            <TextBox x:Name="LimiteBox" Grid.Row="4" Grid.Column="1" Margin="8,0,0,8"/>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" IsCancel="True" Margin="0,12,8,0"/>
+            <Button Content="Salvar" Click="OnSaveClick" IsDefault="True" Margin="0,12,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,55 @@
+<Window x:Class="CoinCraft.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CoinCraft — Offline" Height="560" Width="920" WindowStartupLocation="CenterScreen"
+        KeyDown="OnMainWindowKeyDown">
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Arquivo">
+                <MenuItem Header="Backup..." Click="OnBackupClick"/>
+                <MenuItem Header="Restaurar..." Click="OnRestoreClick"/>
+                <MenuItem Header="Exportar">
+                    <MenuItem Header="Lançamentos (CSV)" Click="OnExportCsvClick"/>
+                    <MenuItem Header="Lançamentos (PDF)" Click="OnExportPdfClick"/>
+                    <Separator/>
+                    <MenuItem Header="Resumo por Categoria (CSV)" Click="OnExportSummaryCategoryClick"/>
+                    <MenuItem Header="Resumo por Conta (CSV)" Click="OnExportSummaryAccountClick"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Sair" Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Exibir">
+                <MenuItem Header="Dashboard" Click="OnDashboardClick"/>
+                <MenuItem Header="Lançamentos" Click="OnLancamentosClick"/>
+                <MenuItem Header="Contas" Click="OnContasClick"/>
+                <MenuItem Header="Categorias" Click="OnCategoriasClick"/>
+            </MenuItem>
+            <MenuItem Header="_Relatórios">
+                <MenuItem Header="Extrato (CSV)" Click="OnExportCsvClick"/>
+                <MenuItem Header="Extrato (PDF)" Click="OnExportPdfClick"/>
+                <Separator/>
+                <MenuItem Header="Resumo por Categoria (CSV)" Click="OnExportSummaryCategoryClick"/>
+                <MenuItem Header="Resumo por Conta (CSV)" Click="OnExportSummaryAccountClick"/>
+            </MenuItem>
+            <MenuItem Header="_Ajuda">
+                <MenuItem Header="Abrir pasta de dados" Click="OnOpenDataFolder"/>
+                <MenuItem Header="Sobre"/>
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Bem-vindo ao CoinCraft (offline/local)"
+                       FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+            <StackPanel Grid.Row="1">
+                <TextBlock Text="Este é um esqueleto inicial. Cadastre Contas/Categorias e crie Lançamentos."
+                           Margin="0,0,0,8"/>
+                <Button Content="Criar dados de exemplo" Width="220" Click="OnSeedClick"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>

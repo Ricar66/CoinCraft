@@ -1,0 +1,36 @@
+<Window x:Class="CoinCraft.App.Views.AccountsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Contas" Height="520" Width="880" WindowStartupLocation="CenterOwner">
+    <DockPanel LastChildFill="True">
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="Adicionar" Click="OnAddClick" Margin="0,0,8,0"/>
+            <Button Content="Editar" Click="OnEditClick" Margin="0,0,8,0"/>
+            <Button Content="Excluir" Click="OnDeleteClick" Margin="0,0,8,0"/>
+            <Separator/>
+            <Button Content="Atualizar" Click="OnRefreshClick"/>
+        </ToolBar>
+
+        <Grid Margin="8">
+            <DataGrid ItemsSource="{Binding Accounts}"
+                      SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nome" Binding="{Binding Nome}" Width="*"/>
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="140"/>
+                    <DataGridTextColumn Header="Saldo Inicial" Binding="{Binding SaldoInicial}" Width="140"/>
+                    <DataGridCheckBoxColumn Header="Ativa" Binding="{Binding Ativa}" Width="80"/>
+                    <DataGridTextColumn Header="Cor" Binding="{Binding CorHex}" Width="120"/>
+                    <DataGridTextColumn Header="Ícone" Binding="{Binding Icone}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DockPanel>
+</Window>

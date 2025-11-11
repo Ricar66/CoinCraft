@@ -1,0 +1,43 @@
+<Window x:Class="CoinCraft.App.Views.TransactionEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lançamento" Height="420" Width="600" WindowStartupLocation="CenterOwner">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Data" VerticalAlignment="Center"/>
+            <DatePicker x:Name="DataPicker" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Tipo" Grid.Row="1" VerticalAlignment="Center"/>
+            <ComboBox x:Name="TipoCombo" Grid.Row="1" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Valor" Grid.Row="2" VerticalAlignment="Center"/>
+            <TextBox x:Name="ValorBox" Grid.Row="2" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Conta" Grid.Row="3" VerticalAlignment="Center"/>
+            <ComboBox x:Name="ContaCombo" Grid.Row="3" Grid.Column="1" Margin="8,0,0,8" DisplayMemberPath="Nome" SelectedValuePath="Id"/>
+
+            <TextBlock Text="Categoria" Grid.Row="4" VerticalAlignment="Center"/>
+            <ComboBox x:Name="CategoriaCombo" Grid.Row="4" Grid.Column="1" Margin="8,0,0,8" DisplayMemberPath="Nome" SelectedValuePath="Id"/>
+
+            <TextBlock Text="Descrição" Grid.Row="5" VerticalAlignment="Center"/>
+            <TextBox x:Name="DescricaoBox" Grid.Row="5" Grid.Column="1" Margin="8,0,0,8"/>
+
+            <TextBlock Text="Conta Destino (Transferência)" Grid.Row="6" VerticalAlignment="Center"/>
+            <ComboBox x:Name="ContaDestinoCombo" Grid.Row="6" Grid.Column="1" Margin="8,0,0,8" DisplayMemberPath="Nome" SelectedValuePath="Id"/>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" IsCancel="True" Margin="0,12,8,0"/>
+            <Button Content="Salvar" IsDefault="True" Click="OnSaveClick" Margin="0,12,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>
