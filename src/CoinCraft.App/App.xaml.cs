@@ -312,27 +312,29 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         // Tratar exceções não capturadas para evitar fechamento abrupto
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        // Validação de licença antes de abrir a janela principal (com opção de pular em testes)
-        var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
-        if (skipLic != "1")
-        {
-            var httpClient = new HttpClient();
-            var apiClient = new LicenseApiClient(httpClient, "https://licensing.example.com"); // TODO: mover para configuração
-            var licensing = new LicensingService(apiClient);
-
-            var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
-            if (!validRes.IsValid)
-            {
-                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
-                var ok = licWin.ShowDialog();
-                if (licensing.CurrentState != LicenseState.Active)
-                {
-                    MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    Shutdown();
-                    return;
-                }
-            }
-        }
+        // Licenciamento temporariamente desativado: não bloquear startup por licença
+        // (Reativar removendo este bloco comentado e a mensagem de log abaixo)
+        // var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
+        // if (skipLic != "1")
+        // {
+        //     var httpClient = new HttpClient();
+        //     var apiClient = new LicenseApiClient(httpClient, "https://licensing.example.com"); // TODO: mover para configuração
+        //     var licensing = new LicensingService(apiClient);
+        //
+        //     var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
+        //     if (!validRes.IsValid)
+        //     {
+        //         var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
+        //         var ok = licWin.ShowDialog();
+        //         if (licensing.CurrentState != LicenseState.Active)
+        //         {
+        //             MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //             Shutdown();
+        //             return;
+        //         }
+        //     }
+        // }
+        new LogService().Info("Licenciamento desativado temporariamente: app liberado sem validação.");
 
         // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
         var main = new MainWindow();

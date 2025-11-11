@@ -11,6 +11,13 @@ namespace CoinCraft.App.ViewModels;
 
 public sealed class CategoriesViewModel : ObservableObject
 {
+    private string? _statusMessage;
+    public string? StatusMessage
+    {
+        get => _statusMessage;
+        private set => SetProperty(ref _statusMessage, value);
+    }
+
     private ObservableCollection<Category> _categories = new();
     public ObservableCollection<Category> Categories
     {
@@ -30,6 +37,7 @@ public sealed class CategoriesViewModel : ObservableObject
         using var db = new CoinCraftDbContext();
         var list = await Task.Run(() => db.Categories.OrderBy(c => c.Nome).ToList());
         Categories = new ObservableCollection<Category>(list);
+        StatusMessage = $"{Categories.Count} categorias carregadas.";
     }
 
     public async Task AddAsync(Category cat)
@@ -39,6 +47,7 @@ public sealed class CategoriesViewModel : ObservableObject
             using var db = new CoinCraftDbContext();
             db.Categories.Add(cat);
             await db.SaveChangesAsync();
+            StatusMessage = "Categoria adicionada com sucesso.";
         }
         catch (Exception ex)
         {
@@ -60,6 +69,7 @@ public sealed class CategoriesViewModel : ObservableObject
             entity.ParentCategoryId = updated.ParentCategoryId;
             entity.LimiteMensal = updated.LimiteMensal;
             await db.SaveChangesAsync();
+            StatusMessage = "Categoria atualizada com sucesso.";
         }
         catch (Exception ex)
         {
@@ -77,6 +87,7 @@ public sealed class CategoriesViewModel : ObservableObject
             if (entity is null) return;
             db.Categories.Remove(entity);
             await db.SaveChangesAsync();
+            StatusMessage = "Categoria excluída com sucesso.";
         }
         catch (Exception ex)
         {

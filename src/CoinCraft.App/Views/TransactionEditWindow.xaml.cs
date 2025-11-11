@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using CoinCraft.App.ViewModels;
@@ -46,7 +47,7 @@ public partial class TransactionEditWindow : Window
     {
         var data = DataPicker.SelectedDate ?? DateTime.Today;
         var tipo = (TransactionType)(TipoCombo.SelectedItem ?? TransactionType.Despesa);
-        if (!decimal.TryParse(ValorBox.Text, out var valor) || valor <= 0)
+        if (!decimal.TryParse(ValorBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var valor) || valor <= 0)
         {
             MessageBox.Show("Informe um valor válido (maior que zero).", "Dados obrigatórios", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;

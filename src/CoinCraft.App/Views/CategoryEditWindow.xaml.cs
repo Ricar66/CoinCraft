@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Globalization;
 using CoinCraft.Domain;
 using CoinCraft.Infrastructure;
 
@@ -35,7 +36,7 @@ public partial class CategoryEditWindow : Window
         _cat.CorHex = string.IsNullOrWhiteSpace(CorBox.Text) ? null : CorBox.Text.Trim();
         _cat.Icone = string.IsNullOrWhiteSpace(IconeBox.Text) ? null : IconeBox.Text.Trim();
         _cat.ParentCategoryId = (int?)ParentCombo.SelectedValue;
-        _cat.LimiteMensal = decimal.TryParse(LimiteBox.Text, out var lim) ? lim : null;
+        _cat.LimiteMensal = decimal.TryParse(LimiteBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var lim) ? lim : null;
 
         DialogResult = true;
         Close();

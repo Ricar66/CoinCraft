@@ -11,6 +11,13 @@ namespace CoinCraft.App.ViewModels;
 
 public sealed class AccountsViewModel : ObservableObject
 {
+    private string? _statusMessage;
+    public string? StatusMessage
+    {
+        get => _statusMessage;
+        private set => SetProperty(ref _statusMessage, value);
+    }
+
     private ObservableCollection<Account> _accounts = new();
     public ObservableCollection<Account> Accounts
     {
@@ -30,6 +37,7 @@ public sealed class AccountsViewModel : ObservableObject
         using var db = new CoinCraftDbContext();
         var list = await Task.Run(() => db.Accounts.OrderBy(a => a.Nome).ToList());
         Accounts = new ObservableCollection<Account>(list);
+        StatusMessage = $"{Accounts.Count} contas carregadas.";
     }
 
     public async Task AddAsync(Account account)
@@ -39,6 +47,7 @@ public sealed class AccountsViewModel : ObservableObject
             using var db = new CoinCraftDbContext();
             db.Accounts.Add(account);
             await db.SaveChangesAsync();
+            StatusMessage = "Conta adicionada com sucesso.";
         }
         catch (Exception ex)
         {
@@ -63,6 +72,7 @@ public sealed class AccountsViewModel : ObservableObject
             entity.Icone = updated.Icone;
 
             await db.SaveChangesAsync();
+            StatusMessage = "Conta atualizada com sucesso.";
         }
         catch (Exception ex)
         {
@@ -80,6 +90,7 @@ public sealed class AccountsViewModel : ObservableObject
             if (entity is null) return;
             db.Accounts.Remove(entity);
             await db.SaveChangesAsync();
+            StatusMessage = "Conta excluída com sucesso.";
         }
         catch (Exception ex)
         {

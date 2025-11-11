@@ -26,6 +26,13 @@ public sealed class TransactionItem
 
 public sealed class TransactionsViewModel : ObservableObject
 {
+    private string? _statusMessage;
+    public string? StatusMessage
+    {
+        get => _statusMessage;
+        private set => SetProperty(ref _statusMessage, value);
+    }
+
     private ObservableCollection<TransactionItem> _transactions = new();
     public ObservableCollection<TransactionItem> Transactions
     {
@@ -82,6 +89,26 @@ public sealed class TransactionsViewModel : ObservableObject
             }).ToList());
 
         Transactions = new ObservableCollection<TransactionItem>(items);
+        var parts = new List<string>();
+        if (FilterAccountId.HasValue)
+        {
+            var accName = accMap.TryGetValue(FilterAccountId.Value, out var aName) ? aName : $"#{FilterAccountId.Value}";
+            parts.Add($"Conta: {accName}");
+        }
+        if (FilterCategoryId.HasValue)
+        {
+            var catName = catMap.TryGetValue(FilterCategoryId.Value, out var cName) ? cName : $"#{FilterCategoryId.Value}";
+            parts.Add($"Categoria: {catName}");
+        }
+        if (FilterFrom.HasValue || FilterTo.HasValue)
+        {
+            var fromTxt = FilterFrom.HasValue ? FilterFrom.Value.ToString("d") : "…";
+            var toTxt = FilterTo.HasValue ? FilterTo.Value.ToString("d") : "…";
+            parts.Add($"Período: {fromTxt}–{toTxt}");
+        }
+        StatusMessage = parts.Count == 0
+            ? $"{Transactions.Count} lançamentos carregados."
+            : $"{Transactions.Count} lançamentos carregados — {string.Join(", ", parts)}";
     }
 
     public async Task AddAsync(Transaction tx)
@@ -91,6 +118,7 @@ public sealed class TransactionsViewModel : ObservableObject
             using var db = new CoinCraftDbContext();
             db.Transactions.Add(tx);
             await db.SaveChangesAsync();
+            StatusMessage = "Lançamento adicionado com sucesso.";
         }
         catch (Exception ex)
         {
@@ -114,6 +142,7 @@ public sealed class TransactionsViewModel : ObservableObject
             entity.Descricao = tx.Descricao;
             entity.OpostoAccountId = tx.OpostoAccountId;
             await db.SaveChangesAsync();
+            StatusMessage = "Lançamento atualizado com sucesso.";
         }
         catch (Exception ex)
         {
@@ -131,6 +160,7 @@ public sealed class TransactionsViewModel : ObservableObject
             if (entity is null) return;
             db.Transactions.Remove(entity);
             await db.SaveChangesAsync();
+            StatusMessage = "Lançamento excluído com sucesso.";
         }
         catch (Exception ex)
         {

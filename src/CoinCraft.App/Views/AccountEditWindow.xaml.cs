@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Windows;
 using CoinCraft.Domain;
 
@@ -34,7 +35,7 @@ public partial class AccountEditWindow : Window
             return;
         }
 
-        if (!decimal.TryParse(SaldoBox.Text, out var saldo))
+        if (!decimal.TryParse(SaldoBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var saldo))
         {
             MessageBox.Show("Saldo inicial inválido.", "Dados obrigatórios", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;

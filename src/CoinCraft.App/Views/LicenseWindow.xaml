@@ -20,6 +20,7 @@
             <TextBlock Text="Instalações disponíveis:" FontWeight="Bold" Margin="0,8,0,0"/>
             <TextBlock Text="{Binding RemainingInstallsText}" Margin="0,4,0,0"/>
 
+            <!-- Licenciamento temporariamente desativado: campos comentados
             <TextBlock Text="Chave de licença:" FontWeight="Bold" Margin="0,8,0,0"/>
             <TextBox Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
 
@@ -27,6 +28,7 @@
                 <Button Content="Ativar" Command="{Binding ActivateCommand}" Width="100"/>
                 <Button Content="Comprar" Command="{Binding PurchaseCommand}" Width="100" Margin="8,0,0,0"/>
             </StackPanel>
+            -->
         </StackPanel>
     </Grid>
 </Window>

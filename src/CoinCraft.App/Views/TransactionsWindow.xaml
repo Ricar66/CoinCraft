@@ -13,6 +13,9 @@
             <Button Content="Exportar CSV" Click="OnExportCsvClick"/>
             <Button Content="Exportar PDF" Click="OnExportPdfClick"/>
         </ToolBar>
+        <StatusBar DockPanel.Dock="Bottom">
+            <TextBlock Text="{Binding StatusMessage}"/>
+        </StatusBar>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
             <StackPanel.Resources>
                 <Style TargetType="FrameworkElement">

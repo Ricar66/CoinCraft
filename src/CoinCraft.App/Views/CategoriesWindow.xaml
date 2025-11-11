@@ -10,6 +10,9 @@
             <Separator/>
             <Button Content="Atualizar" Click="OnRefreshClick"/>
         </ToolBar>
+        <StatusBar DockPanel.Dock="Bottom">
+            <TextBlock Text="{Binding StatusMessage}"/>
+        </StatusBar>
         <Grid Margin="8">
             <DataGrid ItemsSource="{Binding Categories}"
                       SelectedItem="{Binding Selected, Mode=TwoWay}"
