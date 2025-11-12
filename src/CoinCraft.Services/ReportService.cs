@@ -2,11 +2,67 @@ using System.Text;
 using CoinCraft.Infrastructure;
 using CoinCraft.Domain;
 using QuestPDF.Fluent;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoinCraft.Services;
 
 public sealed class ReportService
 {
+    public sealed class NetWorthPoint
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public decimal NetWorth { get; set; }
+    }
+
+    // Retorna evolução do patrimônio líquido somando saldos de todas as contas
+    // no fechamento de cada mês (último dia do mês), indo do passado até o mês corrente.
+    public List<NetWorthPoint> GetNetWorthHistory(int months = 12, DateTime? until = null)
+    {
+        if (months <= 0) months = 1;
+        using var db = new CoinCraftDbContext();
+
+        var endDate = until?.Date ?? DateTime.Today;
+        var lastMonthEnd = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+
+        var accounts = db.Accounts.AsNoTracking().ToList();
+        var points = new List<NetWorthPoint>();
+
+        for (int i = months - 1; i >= 0; i--)
+        {
+            var periodEnd = lastMonthEnd.AddMonths(-i);
+
+            // Carrega todos os lançamentos até o fim do mês
+            var txs = db.Transactions
+                .AsNoTracking()
+                .Where(t => t.Data <= periodEnd)
+                .ToList();
+
+            decimal netWorth = 0m;
+            foreach (var acc in accounts)
+            {
+                var receitas = txs.Where(t => t.Tipo == TransactionType.Receita && t.AccountId == acc.Id).Sum(t => t.Valor);
+                var despesas = txs.Where(t => t.Tipo == TransactionType.Despesa && t.AccountId == acc.Id).Sum(t => t.Valor);
+                var transfOut = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.AccountId == acc.Id).Sum(t => t.Valor);
+                var transfIn = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.OpostoAccountId == acc.Id).Sum(t => t.Valor);
+                var saldo = acc.SaldoInicial + receitas - despesas - transfOut + transfIn;
+                netWorth += saldo;
+            }
+
+            points.Add(new NetWorthPoint
+            {
+                Year = periodEnd.Year,
+                Month = periodEnd.Month,
+                NetWorth = netWorth
+            });
+        }
+
+        return points;
+    }
+
     public string ExportTransactionsCsv(string destinationFolder, DateTime? from = null, DateTime? to = null, int? accountId = null, int? categoryId = null)
     {
         Directory.CreateDirectory(destinationFolder);

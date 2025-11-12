@@ -12,6 +12,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12" IsEnabled="{Binding CanApply}">
@@ -122,5 +123,21 @@
                 </DataGrid>
             </GroupBox>
         </Grid>
+
+        <GroupBox Grid.Row="5" Header="Patrimônio Líquido" Margin="0,12,0,0">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Período:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="NetWorthPeriodCombo" Width="80" SelectedIndex="1" SelectionChanged="OnNetWorthPeriodChanged">
+                        <ComboBoxItem Content="6"/>
+                        <ComboBoxItem Content="12"/>
+                        <ComboBoxItem Content="24"/>
+                    </ComboBox>
+                </StackPanel>
+                <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="8">
+                    <Canvas x:Name="NetWorthCanvas" Height="160"/>
+                </Border>
+            </StackPanel>
+        </GroupBox>
     </Grid>
 </Window>

@@ -11,6 +11,7 @@ public partial class TransactionEditWindow : Window
 {
     private readonly TransactionsViewModel _vm;
     private readonly TransactionItem? _editing;
+    private string? _attachmentPath;
     public Transaction? ResultTransaction { get; private set; }
 
     public TransactionEditWindow(TransactionsViewModel vm, TransactionItem? editing = null)
@@ -30,6 +31,7 @@ public partial class TransactionEditWindow : Window
         {
             DataPicker.SelectedDate = DateTime.Today;
             TipoCombo.SelectedItem = TransactionType.Despesa;
+            AttachmentNameText.Text = "Nenhum arquivo selecionado";
         }
         else
         {
@@ -40,6 +42,10 @@ public partial class TransactionEditWindow : Window
             CategoriaCombo.SelectedValue = _editing.CategoryId;
             DescricaoBox.Text = _editing.Descricao ?? string.Empty;
             ContaDestinoCombo.SelectedValue = _editing.OpostoAccountId;
+            _attachmentPath = _editing.AttachmentPath;
+            AttachmentNameText.Text = string.IsNullOrEmpty(_editing.AttachmentPath)
+                ? "Nenhum arquivo selecionado"
+                : System.IO.Path.GetFileName(_editing.AttachmentPath);
         }
     }
 
@@ -81,11 +87,55 @@ public partial class TransactionEditWindow : Window
             AccountId = accountId,
             CategoryId = (int?)CategoriaCombo.SelectedValue,
             Descricao = string.IsNullOrWhiteSpace(DescricaoBox.Text) ? null : DescricaoBox.Text.Trim(),
-            OpostoAccountId = opostoId
+            OpostoAccountId = opostoId,
+            AttachmentPath = _attachmentPath
         };
 
         ResultTransaction = tx;
         DialogResult = true;
         Close();
+    }
+
+    private void OnSelectAttachmentClick(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Selecionar comprovante",
+            Filter = "Imagens e PDF|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp;*.pdf|Todos os arquivos|*.*",
+            Multiselect = false
+        };
+
+        if (dlg.ShowDialog() == true)
+        {
+            try
+            {
+                var targetPath = CopyAttachmentToAppData(dlg.FileName);
+                _attachmentPath = targetPath;
+                AttachmentNameText.Text = System.IO.Path.GetFileName(targetPath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Falha ao anexar arquivo: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void OnClearAttachmentClick(object sender, RoutedEventArgs e)
+    {
+        _attachmentPath = null;
+        AttachmentNameText.Text = "Nenhum arquivo selecionado";
+    }
+
+    private static string CopyAttachmentToAppData(string sourceFile)
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var dir = System.IO.Path.Combine(appData, "CoinCraft", "attachments");
+        System.IO.Directory.CreateDirectory(dir);
+
+        var ext = System.IO.Path.GetExtension(sourceFile);
+        var name = $"{Guid.NewGuid():N}{ext}";
+        var dest = System.IO.Path.Combine(dir, name);
+        System.IO.File.Copy(sourceFile, dest, overwrite: false);
+        return dest;
     }
 }

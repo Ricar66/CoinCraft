@@ -44,6 +44,38 @@ public partial class App : Application
             db.Database.Migrate();
             log.Info("Migrations aplicadas com sucesso.");
 
+            // Sanidade: garantir coluna AttachmentPath caso alguma base antiga não tenha aplicado a migration
+            try
+            {
+                using var conn = db.Database.GetDbConnection();
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "PRAGMA table_info('Transactions')";
+                using var reader = cmd.ExecuteReader();
+                bool hasAttachment = false;
+                while (reader.Read())
+                {
+                    var colName = reader.GetString(1); // name
+                    if (string.Equals(colName, "AttachmentPath", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAttachment = true;
+                        break;
+                    }
+                }
+                if (!hasAttachment)
+                {
+                    log.Info("AttachmentPath ausente em Transactions — aplicando ALTER TABLE.");
+                    using var alter = conn.CreateCommand();
+                    alter.CommandText = "ALTER TABLE Transactions ADD COLUMN AttachmentPath TEXT";
+                    alter.ExecuteNonQuery();
+                    log.Info("Coluna AttachmentPath criada via ALTER TABLE.");
+                }
+            }
+            catch (Exception exSanity)
+            {
+                log.Error($"Falha na checagem/correção de AttachmentPath: {exSanity.Message}");
+            }
+
             // PRAGMAs de SQLite para estabilidade e desempenho
             try
             {
@@ -55,6 +87,54 @@ public partial class App : Application
             catch (Exception exPragma)
             {
                 log.Info($"Falha ao aplicar PRAGMAs: {exPragma.Message}");
+            }
+
+            // Garantir tabela RecurringTransactions caso base antiga não a possua
+            try
+            {
+                using var conn = db.Database.GetDbConnection();
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='RecurringTransactions'";
+                var exists = Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                if (!exists)
+                {
+                    log.Info("Tabela RecurringTransactions ausente — criando via DDL.");
+                    var ddl = @"
+CREATE TABLE IF NOT EXISTS RecurringTransactions (
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  Nome TEXT NOT NULL,
+  Frequencia INTEGER NOT NULL,
+  StartDate TEXT NOT NULL,
+  EndDate TEXT NULL,
+  DiaDaSemana INTEGER NULL,
+  DiaDoMes INTEGER NULL,
+  AutoLancamento INTEGER NOT NULL,
+  NextRunDate TEXT NOT NULL,
+  Tipo INTEGER NOT NULL,
+  Valor TEXT NOT NULL,
+  AccountId INTEGER NOT NULL,
+  CategoryId INTEGER NULL,
+  Descricao TEXT NULL,
+  OpostoAccountId INTEGER NULL,
+  FOREIGN KEY (AccountId) REFERENCES Accounts(Id) ON DELETE CASCADE,
+  FOREIGN KEY (OpostoAccountId) REFERENCES Accounts(Id),
+  FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
+);
+
+CREATE INDEX IF NOT EXISTS IX_RecurringTransactions_NextRunDate ON RecurringTransactions(NextRunDate);
+CREATE INDEX IF NOT EXISTS IX_RecurringTransactions_Frequencia_AccountId ON RecurringTransactions(Frequencia, AccountId);
+CREATE INDEX IF NOT EXISTS IX_RecurringTransactions_AccountId ON RecurringTransactions(AccountId);
+CREATE INDEX IF NOT EXISTS IX_RecurringTransactions_CategoryId ON RecurringTransactions(CategoryId);
+CREATE INDEX IF NOT EXISTS IX_RecurringTransactions_OpostoAccountId ON RecurringTransactions(OpostoAccountId);
+";
+                    db.Database.ExecuteSqlRaw(ddl);
+                    log.Info("Tabela RecurringTransactions criada.");
+                }
+            }
+            catch (Exception exRec)
+            {
+                log.Error($"Falha na checagem/correção de RecurringTransactions: {exRec.Message}");
             }
 
             // Verificar se as tabelas principais existem; se não, fazer EnsureCreated

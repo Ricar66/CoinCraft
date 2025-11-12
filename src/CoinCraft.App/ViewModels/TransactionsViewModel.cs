@@ -19,6 +19,7 @@ public sealed class TransactionItem
     public int? CategoryId { get; set; }
     public string? Descricao { get; set; }
     public int? OpostoAccountId { get; set; }
+    public string? AttachmentPath { get; set; }
 
     public string AccountName { get; set; } = string.Empty;
     public string? CategoryName { get; set; }
@@ -84,6 +85,7 @@ public sealed class TransactionsViewModel : ObservableObject
                 CategoryId = t.CategoryId,
                 Descricao = t.Descricao,
                 OpostoAccountId = t.OpostoAccountId,
+                AttachmentPath = t.AttachmentPath,
                 AccountName = accMap.ContainsKey(t.AccountId) ? accMap[t.AccountId] : $"#{t.AccountId}",
                 CategoryName = t.CategoryId.HasValue && catMap.ContainsKey(t.CategoryId.Value) ? catMap[t.CategoryId.Value] : null
             }).ToList());
@@ -141,6 +143,7 @@ public sealed class TransactionsViewModel : ObservableObject
             entity.CategoryId = tx.CategoryId;
             entity.Descricao = tx.Descricao;
             entity.OpostoAccountId = tx.OpostoAccountId;
+            entity.AttachmentPath = tx.AttachmentPath;
             await db.SaveChangesAsync();
             StatusMessage = "Lançamento atualizado com sucesso.";
         }

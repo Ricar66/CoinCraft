@@ -5,6 +5,7 @@ using System.Windows;
 using CoinCraft.Infrastructure;
 using CoinCraft.Domain;
 using CoinCraft.Services;
+using System.Timers;
 
 namespace CoinCraft.App;
 
@@ -12,6 +13,8 @@ public partial class MainWindow : Window
 {
     private readonly BackupService _backup = new();
     private readonly LogService _log = new();
+    private readonly RecurringService _recurring = new();
+    private System.Timers.Timer? _recurringTimer;
 
     public MainWindow()
     {
@@ -19,6 +22,32 @@ public partial class MainWindow : Window
         _log.Info("App iniciado.");
         // Migrations e criação de banco já foram executadas no startup (App.xaml.cs)
         // Evitar rodar migrations novamente aqui para não travar a UI.
+
+        // Processa recorrentes ao iniciar e agenda verificação leve periódica
+        Loaded += (_, __) =>
+        {
+            try
+            {
+                var created = _recurring.ProcessDueRecurringTransactions(createSuggestionsOnly: false);
+                if (created > 0)
+                {
+                    _log.Info($"{created} lançamentos recorrentes criados.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Recorrentes init falhou: {ex.Message}");
+            }
+
+            _recurringTimer = new System.Timers.Timer(60 * 60 * 1000); // 1h
+            _recurringTimer.Elapsed += (_, __) =>
+            {
+                try { _recurring.ProcessDueRecurringTransactions(createSuggestionsOnly: false); }
+                catch (Exception ex) { _log.Error($"Recurring timer error: {ex.Message}"); }
+            };
+            _recurringTimer.AutoReset = true;
+            _recurringTimer.Start();
+        };
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
@@ -56,6 +85,11 @@ public partial class MainWindow : Window
         var win = new Views.TransactionsWindow { Owner = this };
         win.ShowDialog();
     }
+    private void OnRecorrentesClick(object sender, RoutedEventArgs e)
+    {
+        var win = new Views.RecurringWindow { Owner = this };
+        win.ShowDialog();
+    }
     private void OnContasClick(object sender, RoutedEventArgs e)
     {
         var win = new Views.AccountsWindow { Owner = this };
@@ -64,6 +98,12 @@ public partial class MainWindow : Window
     private void OnCategoriasClick(object sender, RoutedEventArgs e)
     {
         var win = new Views.CategoriesWindow { Owner = this };
+        win.ShowDialog();
+    }
+
+    private void OnImportClick(object sender, RoutedEventArgs e)
+    {
+        var win = new Views.ImportWindow { Owner = this };
         win.ShowDialog();
     }
 

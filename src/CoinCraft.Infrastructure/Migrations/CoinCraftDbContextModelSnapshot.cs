@@ -70,6 +70,7 @@ namespace CoinCraft.Infrastructure.Migrations
                 b.Property<int?>("CategoryId");
                 b.Property<string>("Descricao");
                 b.Property<int?>("OpostoAccountId");
+                b.Property<string>("AttachmentPath");
                 b.HasKey("Id");
                 b.HasIndex("AccountId");
                 b.HasIndex("CategoryId");
@@ -77,6 +78,32 @@ namespace CoinCraft.Infrastructure.Migrations
                 b.HasIndex("OpostoAccountId");
                 b.HasIndex("Tipo", "AccountId");
                 b.ToTable("Transactions");
+            });
+
+            modelBuilder.Entity("CoinCraft.Domain.RecurringTransaction", b =>
+            {
+                b.Property<int>("Id").ValueGeneratedOnAdd();
+                b.Property<string>("Nome").IsRequired().HasMaxLength(200);
+                b.Property<int>("Frequencia");
+                b.Property<DateTime>("StartDate");
+                b.Property<DateTime?>("EndDate");
+                b.Property<int?>("DiaDaSemana");
+                b.Property<int?>("DiaDoMes");
+                b.Property<bool>("AutoLancamento");
+                b.Property<DateTime>("NextRunDate");
+                b.Property<int>("Tipo");
+                b.Property<decimal>("Valor").HasPrecision(18, 2);
+                b.Property<int>("AccountId");
+                b.Property<int?>("CategoryId");
+                b.Property<string>("Descricao");
+                b.Property<int?>("OpostoAccountId");
+                b.HasKey("Id");
+                b.HasIndex("NextRunDate");
+                b.HasIndex("AccountId");
+                b.HasIndex("CategoryId");
+                b.HasIndex("OpostoAccountId");
+                b.HasIndex("Frequencia", "AccountId");
+                b.ToTable("RecurringTransactions");
             });
 
             modelBuilder.Entity("CoinCraft.Domain.Category", b =>
@@ -95,6 +122,22 @@ namespace CoinCraft.Infrastructure.Migrations
             });
 
             modelBuilder.Entity("CoinCraft.Domain.Transaction", b =>
+            {
+                b.HasOne("CoinCraft.Domain.Account", null)
+                    .WithMany()
+                    .HasForeignKey("AccountId")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne("CoinCraft.Domain.Account", null)
+                    .WithMany()
+                    .HasForeignKey("OpostoAccountId");
+
+                b.HasOne("CoinCraft.Domain.Category", null)
+                    .WithMany()
+                    .HasForeignKey("CategoryId");
+            });
+
+            modelBuilder.Entity("CoinCraft.Domain.RecurringTransaction", b =>
             {
                 b.HasOne("CoinCraft.Domain.Account", null)
                     .WithMany()

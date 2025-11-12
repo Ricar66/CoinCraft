@@ -12,4 +12,5 @@ public sealed class Transaction
     public int? CategoryId { get; set; }
     public string? Descricao { get; set; }
     public int? OpostoAccountId { get; set; } // Para Transferência (destino)
+    public string? AttachmentPath { get; set; } // Caminho do comprovante (imagem/PDF)
 }

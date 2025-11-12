@@ -4,10 +4,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Controls;
+using System.Globalization;
 using CoinCraft.App.ViewModels;
 using CoinCraft.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.ObjectModel;
+using CoinCraft.Services;
 
 namespace CoinCraft.App.Views;
 
@@ -37,6 +40,7 @@ public partial class DashboardWindow : Window
                 await LoadRecentAsync();
                 DrawPie();
                 DrawBars();
+                DrawNetWorthBars();
             }
             catch (Exception ex)
             {
@@ -47,7 +51,7 @@ public partial class DashboardWindow : Window
                 _vm.IsLoading = false;
             }
         };
-        SizeChanged += (_, __) => { DrawPie(); DrawBars(); };
+        SizeChanged += (_, __) => { DrawPie(); DrawBars(); DrawNetWorthBars(); };
     }
 
     private void DrawPie()
@@ -150,6 +154,125 @@ public partial class DashboardWindow : Window
         DespesasBar.Width = width * (double)_vm.TotalDespesas / total;
     }
 
+    private void DrawNetWorthBars()
+    {
+        if (NetWorthCanvas is null) return;
+        NetWorthCanvas.Children.Clear();
+        var months = GetSelectedNetWorthMonths();
+        var points = new ReportService().GetNetWorthHistory(months);
+        if (points is null || points.Count == 0) return;
+        double width = NetWorthCanvas.ActualWidth > 0 ? NetWorthCanvas.ActualWidth : 800;
+        double height = NetWorthCanvas.ActualHeight > 0 ? NetWorthCanvas.ActualHeight : 160;
+        double topPadding = 4;
+        double bottomLabelArea = 18;
+        double plotHeight = height - topPadding - bottomLabelArea;
+
+        var min = points.Min(p => p.NetWorth);
+        var max = points.Max(p => p.NetWorth);
+        var rangeDec = Math.Max(1m, max - min);
+        double range = (double)rangeDec;
+
+        int n = points.Count;
+        double barWidth = Math.Max(12, width / n - 6);
+        double gap = Math.Max(4, (width - n * barWidth) / (n + 1));
+        double x = gap;
+
+        // Zero line position
+        double zeroRatio = (double)((0m - min) / rangeDec); // 0..1 within [min,max]
+        double zeroY = topPadding + (1 - zeroRatio) * plotHeight;
+
+        // Draw zero reference line
+        var zeroLine = new Line
+        {
+            X1 = 0,
+            X2 = width,
+            Y1 = zeroY,
+            Y2 = zeroY,
+            Stroke = Brushes.Gray,
+            StrokeThickness = 1,
+            StrokeDashArray = new DoubleCollection { 2, 2 }
+        };
+        NetWorthCanvas.Children.Add(zeroLine);
+
+        // Scale labels (min, zero, max)
+        var culture = CultureInfo.GetCultureInfo("pt-BR");
+        AddScaleLabel(2, topPadding, max.ToString("C", culture));
+        AddScaleLabel(2, zeroY - 8, 0m.ToString("C", culture));
+        AddScaleLabel(2, topPadding + plotHeight - 12, min.ToString("C", culture));
+
+        for (int i = 0; i < n; i++)
+        {
+            var p = points[i];
+            var value = p.NetWorth;
+
+            double valueRatio = (double)((value - min) / rangeDec); // 0..1
+            double valueY = topPadding + (1 - valueRatio) * plotHeight;
+
+            // Height relative to zero
+            double h = Math.Abs(valueY - zeroY);
+            h = Math.Max(2, h);
+
+            bool positive = value >= 0m;
+            var fill = positive
+                ? (Brush)new BrushConverter().ConvertFromString("#42A5F5")
+                : (Brush)new BrushConverter().ConvertFromString("#EF5350");
+
+            var rect = new Rectangle
+            {
+                Width = barWidth,
+                Height = h,
+                Fill = fill,
+                Stroke = Brushes.Transparent
+            };
+            Canvas.SetLeft(rect, x);
+            Canvas.SetTop(rect, positive ? valueY : zeroY);
+            NetWorthCanvas.Children.Add(rect);
+
+            ToolTipService.SetToolTip(rect, $"{p.Month:00}/{p.Year}: {value.ToString("C", culture)}");
+
+            var label = new System.Windows.Controls.TextBlock
+            {
+                Text = $"{p.Month:00}/{p.Year % 100}",
+                FontSize = 10,
+                Foreground = Brushes.Gray
+            };
+            Canvas.SetLeft(label, x);
+            Canvas.SetTop(label, height - 16);
+            NetWorthCanvas.Children.Add(label);
+
+            x += barWidth + gap;
+        }
+    }
+
+    private void AddScaleLabel(double x, double y, string text)
+    {
+        var tb = new System.Windows.Controls.TextBlock
+        {
+            Text = text,
+            FontSize = 10,
+            Foreground = Brushes.Gray
+        };
+        Canvas.SetLeft(tb, x);
+        Canvas.SetTop(tb, y);
+        NetWorthCanvas.Children.Add(tb);
+    }
+
+    private int GetSelectedNetWorthMonths()
+    {
+        try
+        {
+            if (NetWorthPeriodCombo?.SelectedItem is ComboBoxItem item && int.TryParse(item.Content?.ToString(), out var months))
+                return months;
+        }
+        catch { }
+        return 12;
+    }
+
+    private void OnNetWorthPeriodChanged(object sender, SelectionChangedEventArgs e)
+    {
+        DrawNetWorthBars();
+    }
+
     private async void OnApplyDashFilters(object sender, RoutedEventArgs e)
     {
         if (_vm.IsLoading) return;
@@ -162,6 +285,7 @@ public partial class DashboardWindow : Window
             await LoadRecentAsync();
             DrawPie();
             DrawBars();
+            DrawNetWorthBars();
         }
         catch (Exception ex)
         {

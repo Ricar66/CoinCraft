@@ -8,6 +8,7 @@
             <MenuItem Header="_Arquivo">
                 <MenuItem Header="Backup..." Click="OnBackupClick"/>
                 <MenuItem Header="Restaurar..." Click="OnRestoreClick"/>
+                <MenuItem Header="Importar (CSV)..." Click="OnImportClick"/>
                 <MenuItem Header="Exportar">
                     <MenuItem Header="Lançamentos (CSV)" Click="OnExportCsvClick"/>
                     <MenuItem Header="Lançamentos (PDF)" Click="OnExportPdfClick"/>
@@ -22,6 +23,7 @@
                 <MenuItem Header="Dashboard" Click="OnDashboardClick"/>
                 <MenuItem Header="Lançamentos" Click="OnLancamentosClick"/>
                 <MenuItem Header="Contas" Click="OnContasClick"/>
+                <MenuItem Header="Recorrentes" Click="OnRecorrentesClick"/>
                 <MenuItem Header="Categorias" Click="OnCategoriasClick"/>
             </MenuItem>
             <MenuItem Header="_Relatórios">

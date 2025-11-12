@@ -19,6 +19,7 @@ public sealed class CoinCraftDbContext : DbContext
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Goal> Goals => Set<Goal>();
     public DbSet<UserSetting> UserSettings => Set<UserSetting>();
+    public DbSet<RecurringTransaction> RecurringTransactions => Set<RecurringTransaction>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -38,9 +39,13 @@ public sealed class CoinCraftDbContext : DbContext
         modelBuilder.Entity<Account>().Property(x => x.Nome).HasMaxLength(80);
         modelBuilder.Entity<Category>().Property(x => x.Nome).HasMaxLength(80);
         modelBuilder.Entity<Transaction>().Property(x => x.Valor).HasPrecision(18,2);
+        modelBuilder.Entity<RecurringTransaction>().Property(x => x.Valor).HasPrecision(18,2);
+        modelBuilder.Entity<RecurringTransaction>().Property(x => x.Nome).HasMaxLength(200);
 
         // Índices úteis
         modelBuilder.Entity<Transaction>().HasIndex(x => x.Data);
         modelBuilder.Entity<Transaction>().HasIndex(x => new { x.Tipo, x.AccountId });
+        modelBuilder.Entity<RecurringTransaction>().HasIndex(x => x.NextRunDate);
+        modelBuilder.Entity<RecurringTransaction>().HasIndex(x => new { x.Frequencia, x.AccountId });
     }
 }
