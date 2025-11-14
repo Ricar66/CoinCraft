@@ -7,10 +7,15 @@ using CoinCraft.Services;
 using CoinCraft.Services.Licensing;
 using System.Net.Http;
 
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Text.Json;
+
 namespace CoinCraft.App;
 
 public partial class App : Application
 {
+    public static IServiceProvider? Services { get; private set; }
     protected override void OnStartup(StartupEventArgs e)
     {
         // Aplicar migrations no início da aplicação para garantir schema
@@ -416,9 +421,78 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         // }
         new LogService().Info("Licenciamento desativado temporariamente: app liberado sem validação.");
 
+        // Configurar Injeção de Dependência
+        try
+        {
+            var sc = new ServiceCollection();
+            sc.AddDbContext<CoinCraftDbContext>();
+
+            // Serviços centrais
+            sc.AddSingleton<LogService>();
+            sc.AddSingleton<BackupService>();
+            sc.AddSingleton<RecurringService>();
+            sc.AddSingleton<AlertService>();
+            sc.AddSingleton<AttachmentService>();
+            sc.AddSingleton<ConfigService>();
+            sc.AddSingleton<HttpClient>();
+            sc.AddTransient<ReportService>();
+
+            // Licenciamento (mantido desativado no fluxo de UI por ora)
+            sc.AddSingleton<CoinCraft.Services.Licensing.ILicenseApiClient>(sp =>
+                new CoinCraft.Services.Licensing.LicenseApiClient(
+                    sp.GetRequiredService<HttpClient>(),
+                    "https://licensing.example.com")); // TODO: mover para configuração
+            sc.AddSingleton<CoinCraft.Services.Licensing.ILicensingService, CoinCraft.Services.Licensing.LicensingService>();
+
+            // ViewModels
+            sc.AddTransient<CoinCraft.App.ViewModels.DashboardViewModel>();
+            sc.AddTransient<CoinCraft.App.ViewModels.TransactionsViewModel>();
+            sc.AddTransient<CoinCraft.App.ViewModels.RecurringViewModel>();
+            sc.AddTransient<CoinCraft.App.ViewModels.AccountsViewModel>();
+            sc.AddTransient<CoinCraft.App.ViewModels.CategoriesViewModel>();
+            sc.AddTransient<CoinCraft.App.ViewModels.ImportViewModel>();
+            sc.AddTransient<CoinCraft.App.ViewModels.SettingsViewModel>();
+
+            Services = sc.BuildServiceProvider();
+            new LogService().Info("DI inicializada.");
+        }
+        catch (Exception exDi)
+        {
+            var logDi = new LogService();
+            logDi.Error($"Falha ao inicializar DI: {exDi.Message}");
+        }
+
         // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
         var main = new MainWindow();
         main.Show();
+
+        // Aplicar tema e tela inicial conforme configurações do usuário
+        try
+        {
+            var settingsVm = Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+            // Ajuste de tema
+            var bg = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase) ? System.Windows.Media.Color.FromRgb(30, 30, 30) : System.Windows.Media.Colors.White;
+            var fg = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase) ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black;
+            Application.Current.Resources["AppBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(bg);
+            Application.Current.Resources["AppForegroundBrush"] = new System.Windows.Media.SolidColorBrush(fg);
+
+            // Tela inicial
+            var initial = settingsVm.TelaInicial?.ToLowerInvariant();
+            if (initial == "dashboard")
+            {
+                var win = new CoinCraft.App.Views.DashboardWindow { Owner = main };
+                win.ShowDialog();
+            }
+            else if (initial == "lancamentos")
+            {
+                var win = new CoinCraft.App.Views.TransactionsWindow { Owner = main };
+                win.ShowDialog();
+            }
+        }
+        catch (Exception exInit)
+        {
+            new LogService().Info($"Configurações iniciais não aplicadas: {exInit.Message}");
+        }
 
         base.OnStartup(e);
     }

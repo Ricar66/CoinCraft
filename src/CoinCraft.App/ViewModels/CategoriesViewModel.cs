@@ -11,6 +11,7 @@ namespace CoinCraft.App.ViewModels;
 
 public sealed class CategoriesViewModel : ObservableObject
 {
+    private readonly LogService _log;
     private string? _statusMessage;
     public string? StatusMessage
     {
@@ -32,6 +33,11 @@ public sealed class CategoriesViewModel : ObservableObject
         set => SetProperty(ref _selected, value);
     }
 
+    public CategoriesViewModel(LogService log)
+    {
+        _log = log;
+    }
+
     public async Task LoadAsync()
     {
         using var db = new CoinCraftDbContext();
@@ -51,7 +57,7 @@ public sealed class CategoriesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao adicionar categoria: {ex.Message}");
+            _log.Error($"Falha ao adicionar categoria: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao salvar categoria", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -73,7 +79,7 @@ public sealed class CategoriesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao atualizar categoria: {ex.Message}");
+            _log.Error($"Falha ao atualizar categoria: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao atualizar categoria", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -91,7 +97,7 @@ public sealed class CategoriesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao excluir categoria: {ex.Message}");
+            _log.Error($"Falha ao excluir categoria: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao excluir categoria", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

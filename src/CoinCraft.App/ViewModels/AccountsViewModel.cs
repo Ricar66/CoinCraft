@@ -11,6 +11,7 @@ namespace CoinCraft.App.ViewModels;
 
 public sealed class AccountsViewModel : ObservableObject
 {
+    private readonly LogService _log;
     private string? _statusMessage;
     public string? StatusMessage
     {
@@ -32,6 +33,11 @@ public sealed class AccountsViewModel : ObservableObject
         set => SetProperty(ref _selectedAccount, value);
     }
 
+    public AccountsViewModel(LogService log)
+    {
+        _log = log;
+    }
+
     public async Task LoadAsync()
     {
         using var db = new CoinCraftDbContext();
@@ -51,7 +57,7 @@ public sealed class AccountsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao adicionar conta: {ex.Message}");
+            _log.Error($"Falha ao adicionar conta: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao salvar conta", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -76,7 +82,7 @@ public sealed class AccountsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao atualizar conta: {ex.Message}");
+            _log.Error($"Falha ao atualizar conta: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao atualizar conta", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -94,7 +100,7 @@ public sealed class AccountsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao excluir conta: {ex.Message}");
+            _log.Error($"Falha ao excluir conta: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao excluir conta", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

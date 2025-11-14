@@ -2,12 +2,13 @@ using System.Windows;
 using System.IO;
 using CoinCraft.App.ViewModels;
 using CoinCraft.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoinCraft.App.Views;
 
 public partial class TransactionsWindow : Window
 {
-    private readonly TransactionsViewModel _vm = new();
+    private readonly TransactionsViewModel _vm = App.Services!.GetRequiredService<TransactionsViewModel>();
 
     public TransactionsWindow()
     {

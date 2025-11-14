@@ -27,6 +27,7 @@ public sealed class TransactionItem
 
 public sealed class TransactionsViewModel : ObservableObject
 {
+    private readonly LogService _log;
     private string? _statusMessage;
     public string? StatusMessage
     {
@@ -55,6 +56,11 @@ public sealed class TransactionsViewModel : ObservableObject
     public DateTime? FilterTo { get; set; }
     public int? FilterAccountId { get; set; }
     public int? FilterCategoryId { get; set; }
+
+    public TransactionsViewModel(LogService log)
+    {
+        _log = log;
+    }
 
     public async Task LoadAsync()
     {
@@ -124,7 +130,7 @@ public sealed class TransactionsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao adicionar lançamento: {ex.Message}");
+            _log.Error($"Falha ao adicionar lançamento: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao salvar lançamento", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -136,6 +142,21 @@ public sealed class TransactionsViewModel : ObservableObject
             using var db = new CoinCraftDbContext();
             var entity = await db.Transactions.FindAsync(tx.Id);
             if (entity is null) return;
+            // Limpa anexo antigo se foi removido ou substituído
+            try
+            {
+                var oldPath = entity.AttachmentPath;
+                var newPath = tx.AttachmentPath;
+                if (!string.Equals(oldPath, newPath, StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(oldPath) && System.IO.File.Exists(oldPath))
+                {
+                    System.IO.File.Delete(oldPath);
+                }
+            }
+            catch (Exception fileEx)
+            {
+                _log.Error($"Falha ao remover anexo antigo do lançamento #{tx.Id}: {fileEx.Message}");
+            }
             entity.Data = tx.Data;
             entity.Tipo = tx.Tipo;
             entity.Valor = tx.Valor;
@@ -149,7 +170,7 @@ public sealed class TransactionsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao atualizar lançamento: {ex.Message}");
+            _log.Error($"Falha ao atualizar lançamento: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao atualizar lançamento", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -161,13 +182,25 @@ public sealed class TransactionsViewModel : ObservableObject
             using var db = new CoinCraftDbContext();
             var entity = await db.Transactions.FindAsync(id);
             if (entity is null) return;
+            try
+            {
+                var path = entity.AttachmentPath;
+                if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))
+                {
+                    System.IO.File.Delete(path);
+                }
+            }
+            catch (Exception fileEx)
+            {
+                _log.Error($"Falha ao remover anexo do lançamento #{id}: {fileEx.Message}");
+            }
             db.Transactions.Remove(entity);
             await db.SaveChangesAsync();
             StatusMessage = "Lançamento excluído com sucesso.";
         }
         catch (Exception ex)
         {
-            new LogService().Error($"Falha ao excluir lançamento: {ex.Message}");
+            _log.Error($"Falha ao excluir lançamento: {ex.Message}");
             MessageBox.Show(ex.Message, "Erro ao excluir lançamento", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

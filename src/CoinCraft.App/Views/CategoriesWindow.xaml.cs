@@ -1,12 +1,13 @@
 using System.Windows;
 using CoinCraft.App.ViewModels;
 using CoinCraft.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoinCraft.App.Views;
 
 public partial class CategoriesWindow : Window
 {
-    private readonly CategoriesViewModel _vm = new();
+    private readonly CategoriesViewModel _vm = App.Services!.GetRequiredService<CategoriesViewModel>();
     public CategoriesWindow()
     {
         InitializeComponent();

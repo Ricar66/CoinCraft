@@ -18,9 +18,13 @@
     <Resource Language="pt-BR" />
   </Resources>
 
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+
   <Applications>
     <Application Id="CoinCraft"
-                 Executable="$targetnametoken$.exe"
+                 Executable="CoinCraft.exe"
                  EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements DisplayName="CoinCraft"
                           Description="Gerenciador financeiro CoinCraft"

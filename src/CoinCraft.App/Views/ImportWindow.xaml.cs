@@ -2,12 +2,13 @@ using System.Windows;
 using Microsoft.Win32;
 using CoinCraft.App.ViewModels;
 using CoinCraft.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoinCraft.App.Views;
 
 public partial class ImportWindow : Window
 {
-    private readonly ImportViewModel _vm = new();
+    private readonly ImportViewModel _vm = App.Services!.GetRequiredService<ImportViewModel>();
 
     public ImportWindow()
     {

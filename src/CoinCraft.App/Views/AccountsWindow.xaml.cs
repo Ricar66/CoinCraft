@@ -1,12 +1,13 @@
 using System.Windows;
 using CoinCraft.App.ViewModels;
 using CoinCraft.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoinCraft.App.Views;
 
 public partial class AccountsWindow : Window
 {
-    private readonly AccountsViewModel _vm = new();
+    private readonly AccountsViewModel _vm = App.Services!.GetRequiredService<AccountsViewModel>();
 
     public AccountsWindow()
     {

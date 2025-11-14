@@ -2,12 +2,13 @@ using System.Windows;
 using CoinCraft.App.ViewModels;
 using CoinCraft.Domain;
 using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoinCraft.App.Views;
 
 public partial class RecurringWindow : Window
 {
-    private readonly RecurringViewModel _vm = new();
+    private readonly RecurringViewModel _vm = App.Services!.GetRequiredService<RecurringViewModel>();
 
     public RecurringWindow()
     {

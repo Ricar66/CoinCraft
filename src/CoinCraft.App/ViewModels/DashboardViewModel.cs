@@ -7,6 +7,11 @@ using CoinCraft.Infrastructure;
 using System;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
+using SkiaSharp;
+using CoinCraft.Services;
 
 namespace CoinCraft.App.ViewModels;
 
@@ -19,6 +24,12 @@ public sealed class CategorySlice
 
 public sealed class DashboardViewModel : ObservableObject
 {
+    private readonly ReportService? _reportService;
+
+    public DashboardViewModel(ReportService? reportService = null)
+    {
+        _reportService = reportService;
+    }
     public DateTime? FilterFrom { get; set; }
     public DateTime? FilterTo { get; set; }
 
@@ -56,6 +67,13 @@ public sealed class DashboardViewModel : ObservableObject
     {
         get => _despesasPorCategoria;
         private set => SetProperty(ref _despesasPorCategoria, value);
+    }
+
+    private IEnumerable<ISeries> _pieSeries = Array.Empty<ISeries>();
+    public IEnumerable<ISeries> PieSeries
+    {
+        get => _pieSeries;
+        private set => SetProperty(ref _pieSeries, value);
     }
 
     public sealed class AccountBalanceItem
@@ -102,6 +120,9 @@ public sealed class DashboardViewModel : ObservableObject
         TotalReceitas = txs.Where(t => t.Tipo == TransactionType.Receita).Sum(t => t.Valor);
         TotalDespesas = txs.Where(t => t.Tipo == TransactionType.Despesa).Sum(t => t.Valor);
 
+        // Atualiza série de comparação Receitas vs Despesas
+        UpdateComparisonSeries();
+
         var categories = await db.Categories.ToDictionaryAsync(c => c.Id, c => c);
         var porCat = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId.HasValue)
             .GroupBy(t => t.CategoryId!.Value)
@@ -115,6 +136,15 @@ public sealed class DashboardViewModel : ObservableObject
             .ToList();
 
         DespesasPorCategoria = new ObservableCollection<CategorySlice>(porCat);
+
+        // Atualiza séries do gráfico de pizza
+        var pie = porCat.Select(s => new PieSeries<double>
+        {
+            Name = s.Name,
+            Values = new[] { (double)s.Total },
+            Fill = new SolidColorPaint(SKColor.Parse(s.ColorHex))
+        }).Cast<ISeries>().ToArray();
+        PieSeries = pie;
 
         // Saldos por conta
         var accounts = await db.Accounts.ToListAsync();
@@ -148,5 +178,119 @@ public sealed class DashboardViewModel : ObservableObject
     {
         get => _recentTransactions;
         set => SetProperty(ref _recentTransactions, value);
+    }
+
+    private IEnumerable<ISeries> _netWorthSeries = Array.Empty<ISeries>();
+    public IEnumerable<ISeries> NetWorthSeries
+    {
+        get => _netWorthSeries;
+        private set => SetProperty(ref _netWorthSeries, value);
+    }
+
+    private Axis[] _netWorthXAxis = System.Array.Empty<Axis>();
+    public Axis[] NetWorthXAxis
+    {
+        get => _netWorthXAxis;
+        private set => SetProperty(ref _netWorthXAxis, value);
+    }
+
+    public void UpdateNetWorthSeries(int months)
+    {
+        if (_reportService is null) return;
+        var points = _reportService.GetNetWorthHistory(months);
+        if (points is null || points.Count == 0)
+        {
+            NetWorthSeries = Array.Empty<ISeries>();
+            NetWorthXAxis = Array.Empty<Axis>();
+            return;
+        }
+
+        var values = points.Select(p => (double)p.NetWorth).ToArray();
+        var labels = points.Select(p => $"{p.Month:00}/{p.Year % 100}").ToArray();
+
+        NetWorthSeries = new ISeries[]
+        {
+            new ColumnSeries<double>
+            {
+                Values = values,
+                Name = "Patrimônio",
+                Fill = new SolidColorPaint(SKColors.SkyBlue)
+            }
+        };
+        NetWorthXAxis = new[]
+        {
+            new Axis
+            {
+                Labels = labels,
+                LabelsPaint = new SolidColorPaint(SKColors.Gray),
+                TextSize = 12
+            }
+        };
+    }
+
+    private IEnumerable<ISeries> _comparisonSeries = Array.Empty<ISeries>();
+    public IEnumerable<ISeries> ComparisonSeries
+    {
+        get => _comparisonSeries;
+        private set => SetProperty(ref _comparisonSeries, value);
+    }
+
+    private Axis[] _comparisonXAxis = System.Array.Empty<Axis>();
+    public Axis[] ComparisonXAxis
+    {
+        get => _comparisonXAxis;
+        private set => SetProperty(ref _comparisonXAxis, value);
+    }
+
+    private void UpdateComparisonSeries()
+    {
+        var values = new double[] { (double)TotalReceitas, (double)TotalDespesas };
+        ComparisonSeries = new ISeries[]
+        {
+            new ColumnSeries<double>
+            {
+                Values = values,
+                Name = "Receitas vs Despesas",
+                Fill = new SolidColorPaint(SKColors.LightGreen)
+            }
+        };
+        ComparisonXAxis = new[]
+        {
+            new Axis
+            {
+                Labels = new[] { "Receitas", "Despesas" },
+                LabelsPaint = new SolidColorPaint(SKColors.Gray),
+                TextSize = 12
+            }
+        };
+    }
+
+    public async Task LoadRecentAsync()
+    {
+        using var db = new CoinCraftDbContext();
+        var from = FilterFrom ?? DateTime.Today.AddDays(-30);
+        var to = FilterTo ?? DateTime.Today;
+        var accounts = await db.Accounts.ToDictionaryAsync(a => a.Id, a => a.Nome);
+        var categories = await db.Categories.ToDictionaryAsync(c => c.Id, c => c.Nome);
+        var recent = await db.Transactions
+            .Where(t => t.Data >= from && t.Data <= to)
+            .OrderByDescending(t => t.Data)
+            .Take(10)
+            .Select(t => new TransactionItem
+            {
+                Id = t.Id,
+                Data = t.Data,
+                Tipo = t.Tipo,
+                Valor = t.Valor,
+                AccountId = t.AccountId,
+                CategoryId = t.CategoryId,
+                Descricao = t.Descricao,
+                OpostoAccountId = t.OpostoAccountId,
+                AccountName = accounts.ContainsKey(t.AccountId) ? accounts[t.AccountId] : $"#{t.AccountId}",
+                CategoryName = t.CategoryId.HasValue && categories.ContainsKey(t.CategoryId.Value) ? categories[t.CategoryId.Value] : null
+            })
+            .ToListAsync();
+
+        RecentTransactions = new ObservableCollection<TransactionItem>(recent);
     }
 }

@@ -5,20 +5,31 @@ using System.Windows;
 using CoinCraft.Infrastructure;
 using CoinCraft.Domain;
 using CoinCraft.Services;
+using Microsoft.Extensions.DependencyInjection;
 using System.Timers;
+using System.Linq;
 
 namespace CoinCraft.App;
 
 public partial class MainWindow : Window
 {
-    private readonly BackupService _backup = new();
-    private readonly LogService _log = new();
-    private readonly RecurringService _recurring = new();
+    private readonly BackupService _backup;
+    private readonly LogService _log;
+    private readonly RecurringService _recurring;
+    private readonly ReportService _report;
+    private readonly AlertService _alerts;
+    private readonly AttachmentService _attachments;
     private System.Timers.Timer? _recurringTimer;
 
     public MainWindow()
     {
         InitializeComponent();
+        _backup = App.Services!.GetRequiredService<BackupService>();
+        _log = App.Services!.GetRequiredService<LogService>();
+        _recurring = App.Services!.GetRequiredService<RecurringService>();
+        _report = App.Services!.GetRequiredService<ReportService>();
+        _alerts = App.Services!.GetRequiredService<AlertService>();
+        _attachments = App.Services!.GetRequiredService<AttachmentService>();
         _log.Info("App iniciado.");
         // Migrations e criação de banco já foram executadas no startup (App.xaml.cs)
         // Evitar rodar migrations novamente aqui para não travar a UI.
@@ -47,6 +58,30 @@ public partial class MainWindow : Window
             };
             _recurringTimer.AutoReset = true;
             _recurringTimer.Start();
+
+            // Atualiza estado do sino de alertas
+            try
+            {
+                var alerts = _alerts.GetAlerts();
+                if (alerts.Count > 0)
+                {
+                    AlertsButton.Content = $"🔔 {alerts.Count} alerta(s)";
+                    AlertsButton.Background = System.Windows.Media.Brushes.IndianRed;
+                    AlertsButton.Foreground = System.Windows.Media.Brushes.White;
+                    AlertsButton.ToolTip = string.Join("\n", alerts.Select(a => a.Message));
+                }
+                else
+                {
+                    AlertsButton.Content = "🔔 Nenhum alerta";
+                    AlertsButton.Background = System.Windows.Media.Brushes.Transparent;
+                    AlertsButton.ClearValue(System.Windows.Controls.Button.ForegroundProperty);
+                    AlertsButton.ToolTip = "Nenhum alerta";
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Falha ao carregar alertas: {ex.Message}");
+            }
         };
     }
 
@@ -107,14 +142,46 @@ public partial class MainWindow : Window
         win.ShowDialog();
     }
 
+    private void OnAlertsClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var alerts = _alerts.GetAlerts();
+            if (alerts.Count == 0)
+            {
+                MessageBox.Show("Nenhum alerta no momento.", "Alertas", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var text = string.Join("\n", alerts.Select(a => $"• {a.Message}"));
+            MessageBox.Show(text, "Alertas", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Erro ao carregar alertas", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var vm = App.Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+            var win = new Views.SettingsWindow(vm) { Owner = this };
+            win.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Erro ao abrir Configurações", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void OnExportCsvClick(object sender, RoutedEventArgs e)
     {
         try
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var dest = Path.Combine(docs, "CoinCraftExports");
-            var report = new ReportService();
-            var path = report.ExportTransactionsCsv(dest);
+            var path = _report.ExportTransactionsCsv(dest);
             MessageBox.Show($"CSV exportado em:\n{path}", "Exportação CSV", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
@@ -129,8 +196,7 @@ public partial class MainWindow : Window
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var dest = Path.Combine(docs, "CoinCraftExports");
-            var report = new ReportService();
-            var path = report.ExportTransactionsPdf(dest);
+            var path = _report.ExportTransactionsPdf(dest);
             MessageBox.Show($"PDF exportado em:\n{path}", "Exportação PDF", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
@@ -173,8 +239,7 @@ public partial class MainWindow : Window
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var dest = Path.Combine(docs, "CoinCraftExports");
-            var report = new ReportService();
-            var path = report.ExportSummaryByCategoryCsv(dest);
+            var path = _report.ExportSummaryByCategoryCsv(dest);
             MessageBox.Show($"Resumo por Categoria exportado em:\n{path}", "Exportação CSV", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
@@ -189,8 +254,7 @@ public partial class MainWindow : Window
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var dest = Path.Combine(docs, "CoinCraftExports");
-            var report = new ReportService();
-            var path = report.ExportSummaryByAccountCsv(dest);
+            var path = _report.ExportSummaryByAccountCsv(dest);
             MessageBox.Show($"Resumo por Conta exportado em:\n{path}", "Exportação CSV", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
@@ -267,6 +331,20 @@ public partial class MainWindow : Window
             {
                 MessageBox.Show(ex.Message, "Erro ao restaurar backup", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+    }
+
+    private void OnCleanupAttachmentsClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var (deleted, bytes) = _attachments.CleanupOrphans();
+            var mb = bytes / (1024.0 * 1024.0);
+            MessageBox.Show($"Removidos {deleted} arquivo(s) órfão(s). Espaço liberado: {mb:F2} MB.", "Limpeza de anexos", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Erro na limpeza de anexos", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
