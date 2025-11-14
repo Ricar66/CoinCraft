@@ -9,8 +9,8 @@
             Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>CoinCraft</DisplayName>
-    <PublisherDisplayName>CoinCraft</PublisherDisplayName>
+    <DisplayName>CodeCraft CLI</DisplayName>
+    <PublisherDisplayName>CodeCraft</PublisherDisplayName>
     <Logo>Assets/StoreLogo.png</Logo>
   </Properties>
 
@@ -26,8 +26,8 @@
     <Application Id="CoinCraft"
                  Executable="CoinCraft.exe"
                  EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="CoinCraft"
-                          Description="Gerenciador financeiro CoinCraft"
+      <uap:VisualElements DisplayName="CodeCraft CLI"
+                          Description="Ferramenta CodeCraft CLI (Windows Desktop)"
                           Square150x150Logo="Assets/Square150x150Logo.png"
                           Square44x44Logo="Assets/Square44x44Logo.png"
                           BackgroundColor="transparent" />
