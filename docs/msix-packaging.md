@@ -20,6 +20,21 @@ Crie os arquivos de imagem PNG (cores sólidas ou transparentes) e coloque-os em
 
 Você pode usar tamanhos maiores mantendo proporções; Visual Studio valida formatos e dimensões.
 
+### Geração automática a partir do seu logo
+Se preferir, gere os três ícones automaticamente a partir de um único arquivo do seu logo (PNG com fundo transparente recomendado):
+
+1. Salve seu arquivo de logo em algum caminho, por exemplo: `assets\codecraft-logo.png`.
+2. Execute o script:
+   ```powershell
+   # Execute na raiz do repositório
+   .\scripts\Generate-AppIcons.ps1 -SourceLogo "assets\codecraft-logo.png"
+   ```
+3. O script criará `Square44x44Logo.png`, `Square150x150Logo.png` e `StoreLogo.png` em `src\CoinCraft.Package\Assets` mantendo proporções e centrando o logo.
+
+Recomendações:
+- Use imagens quadradas ou com área útil central para evitar cortes.
+- Para melhor nitidez, forneça um logo base de ao menos 512×512.
+
 ## Publicar (sideloading)
 1. Abra a solução no Visual Studio e selecione o projeto `CoinCraft.Package`.
 2. Menu `Project → Publish → Create App Packages`.
