@@ -34,3 +34,13 @@ Desktop.ini
 
 # Rider/Resharper caches
 _ReSharper.Caches/
+# Build outputs and local distribution (do not version)
+/CoinCraft-win-*/
+/*.msix
+/*.zip
+
+# Distribution archives generated locally (attach via GitHub Releases)
+dist/**/*.zip
+
+# Private signing key (never commit)
+CoinCraft_dev_private.pfx
