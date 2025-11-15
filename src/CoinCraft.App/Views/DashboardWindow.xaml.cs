@@ -119,7 +119,7 @@ public partial class DashboardWindow : Window
     private void RenderNetWorthChart()
     {
         if (NetWorthHost is null) return;
-        _netWorthChart ??= new CartesianChart { Height = 160 };
+        _netWorthChart ??= new CartesianChart { Height = 140 };
         _netWorthChart.Series = _vm.NetWorthSeries?.ToList() ?? new System.Collections.Generic.List<ISeries>();
         _netWorthChart.XAxes = _vm.NetWorthXAxis ?? System.Array.Empty<LiveChartsCore.SkiaSharpView.Axis>();
         NetWorthHost.Children.Clear();
@@ -129,10 +129,29 @@ public partial class DashboardWindow : Window
     private void RenderComparisonChart()
     {
         if (ComparisonHost is null) return;
-        _comparisonChart ??= new CartesianChart { Height = 160 };
-        _comparisonChart.Series = _vm.ComparisonSeries?.ToList() ?? new System.Collections.Generic.List<ISeries>();
-        _comparisonChart.XAxes = _vm.ComparisonXAxis ?? System.Array.Empty<LiveChartsCore.SkiaSharpView.Axis>();
         ComparisonHost.Children.Clear();
-        ComparisonHost.Children.Add(_comparisonChart);
+
+        var receitas = Math.Max((double)_vm.TotalReceitas, 0);
+        var despesas = Math.Max((double)_vm.TotalDespesas, 0);
+        // Evita ambas zero para manter layout
+        if (receitas == 0 && despesas == 0) { receitas = 1; }
+
+        var barHeight = 24; // altura idêntica ao screenshot
+        var bar = new Grid { Height = barHeight, VerticalAlignment = VerticalAlignment.Center };
+        bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(receitas, GridUnitType.Star) });
+        bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(despesas, GridUnitType.Star) });
+
+        // Cores equivalentes ao visual do screenshot
+        var greenBrush = (SolidColorBrush)new BrushConverter().ConvertFromString("#66C37A");
+        var redBrush = (SolidColorBrush)new BrushConverter().ConvertFromString("#E57373");
+        var green = new Border { Background = greenBrush, Height = barHeight };
+        var red = new Border { Background = redBrush, Height = barHeight };
+        Grid.SetColumn(green, 0);
+        Grid.SetColumn(red, 1);
+        bar.Children.Add(green);
+        bar.Children.Add(red);
+
+        // Sem moldura, sem margem lateral — igual à imagem
+        ComparisonHost.Children.Add(bar);
     }
 }

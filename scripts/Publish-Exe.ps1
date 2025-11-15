@@ -23,7 +23,7 @@ function Publish-Exe([string]$rid) {
   Write-Host "Publicando executável $rid ($Configuration)" -ForegroundColor Cyan
   $props = @()
   if ($SingleFile) { $props += '-p:PublishSingleFile=true'; $props += '-p:IncludeNativeLibrariesForSelfExtract=true'; $props += '-p:EnableCompressionInSingleFile=true' }
-  if ($SelfContained) { $props += '--self-contained true' } else { $props += '--self-contained false' }
+  if ($SelfContained) { $props += '--self-contained'; $props += 'true' } else { $props += '--self-contained'; $props += 'false' }
 
   $cmd = @('publish', $appProj, '-c', $Configuration, '-r', $rid) + $props
   & dotnet $cmd | Write-Output
@@ -35,7 +35,7 @@ function Publish-Exe([string]$rid) {
   $destName = "CoinCraft_${rid}.exe"
   $destPath = Join-Path $distDir $destName
   Copy-Item $exe $destPath -Force
-  Write-Host "Copiado: $destName" -ForegroundColor Green
+  Write-Host "Copiado: $destName -> $destPath" -ForegroundColor Green
 }
 
 switch ($Platform) {
