@@ -24,7 +24,7 @@
 
   <Applications>
     <Application Id="CoinCraft"
-                 Executable="CoinCraft.exe"
+                 Executable="CoinCraft.App.exe"
                  EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements DisplayName="CodeCraft CLI"
                           Description="Ferramenta CodeCraft CLI (Windows Desktop)"

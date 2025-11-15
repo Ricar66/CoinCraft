@@ -38,9 +38,20 @@ _ReSharper.Caches/
 /CoinCraft-win-*/
 /*.msix
 /*.zip
+dist/**/*.msix
+dist/**/*.msixbundle
+src/CoinCraft.Package/AppPackages/
 
 # Distribution archives generated locally (attach via GitHub Releases)
 dist/**/*.zip
 
 # Private signing key (never commit)
 CoinCraft_dev_private.pfx
+scripts/certs/*.pfx
+
+# MSBuild logs
+*.binlog
+msbuild_*.txt
+
+# VS/WAP cache
+*.assets.cache

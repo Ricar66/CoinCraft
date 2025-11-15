@@ -1,6 +1,6 @@
 Param(
   [Parameter(Mandatory=$false)] [string]$MsixPath = '.\\CoinCraft_x64.msix',
-  [Parameter(Mandatory=$false)] [string]$CertPath = '.\\CoinCraft_dev_public.cer'
+  [Parameter(Mandatory=$false)] [string]$CertPath = '.\\CoinCraft_public_der.cer'
 )
 
 Write-Host '== CoinCraft Installer ==' -ForegroundColor Cyan
@@ -22,6 +22,19 @@ Write-Host 'Importando certificado em Root...' -ForegroundColor Yellow
 Import-Certificate -FilePath $CertPath -CertStoreLocation Cert:\CurrentUser\Root | Out-Null
 
 # Install MSIX
+Write-Host 'Verificando pacote CoinCraft instalado e removendo se necessário...' -ForegroundColor Yellow
+try {
+  $identityName = 'CoinCraft'
+  $existing = Get-AppxPackage -Name $identityName -ErrorAction SilentlyContinue
+  if ($existing) {
+    Write-Host "Removendo pacote existente: $($existing.PackageFullName)" -ForegroundColor Yellow
+    Remove-AppxPackage -Package $existing.PackageFullName
+    Start-Sleep -Seconds 2
+  }
+} catch {
+  Write-Warning "Falha ao remover pacote existente: $($_.Exception.Message)"
+}
+
 Write-Host 'Instalando MSIX...' -ForegroundColor Yellow
 Add-AppxPackage -Path $MsixPath
 

@@ -56,3 +56,30 @@ Recomendações:
 - O manifest usa `Windows.FullTrustApplication` + `runFullTrust` para empacotar o app WPF.
 - O pacote inclui o executável do `CoinCraft.App` automaticamente via referência no projeto de empacotamento.
 - Atualizações automáticas podem ser configuradas com `.appinstaller` hospedado em um servidor acessível.
+
+## Troubleshooting (Visual Studio)
+
+### "Não é possível obter configurações do projeto ativo" / `WapProj` inválido
+- Causa provável: componentes de empacotamento do VS ausentes ou ordem de imports no `.wapproj`.
+- Corrigir:
+  1. Instale no Visual Studio Installer:
+     - Workload "Desenvolvimento para a Plataforma Universal do Windows (UWP)".
+     - Componentes: Windows 11 SDK (10.0.22621), Windows app packaging tools, Microsoft Desktop Bridge.
+  2. Garanta no `src/CoinCraft.Package/CoinCraft.Package.wapproj` que o import `.props` vem no topo e o `.targets` no final:
+     ```xml
+     <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props" />
+     ...
+     <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets" />
+     ```
+  3. Feche o VS, apague `.vs` na raiz e `bin/obj` dos projetos, reabra e reconstrua.
+  4. Se só tiver SDK 10.0.19041, retarget temporariamente o `wapproj` para `10.0.19041.0` e, quando possível, instale 22621 para voltar.
+
+### Plataformas x86/x64
+- Nos projetos, defina `Platforms` para `AnyCPU;x86;x64` e `RuntimeIdentifiers` `win-x86;win-x64`.
+- Em "Build > Configuration Manager", garanta que há plataformas `x86` e `x64` para todos os projetos.
+
+### MSBuild em linha de comando
+- Use o MSBuild do Visual Studio pelo caminho completo se `msbuild` não estiver no PATH:
+  ```powershell
+  "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" src\CoinCraft.Package\CoinCraft.Package.wapproj /t:Restore,Publish /p:Configuration=Release /m
+  ```
