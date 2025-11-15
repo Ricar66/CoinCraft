@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <WapProj>true</WapProj>
     <OutputType>AppContainerExe</OutputType>
     <TargetPlatformVersion>10.0.22621.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
@@ -17,4 +18,7 @@
     <AppxManifest Include="Package.appxmanifest" />
     <Content Include="Assets\**\*.*" />
   </ItemGroup>
+
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props" />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets" />
 </Project>
