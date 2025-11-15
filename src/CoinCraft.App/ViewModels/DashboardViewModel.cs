@@ -245,13 +245,22 @@ public sealed class DashboardViewModel : ObservableObject
     private void UpdateComparisonSeries()
     {
         var values = new double[] { (double)TotalReceitas, (double)TotalDespesas };
+        // Séries compactas: barras separadas com cores distintas
         ComparisonSeries = new ISeries[]
         {
             new ColumnSeries<double>
             {
-                Values = values,
-                Name = "Receitas vs Despesas",
-                Fill = new SolidColorPaint(SKColors.LightGreen)
+                Values = new double[]{ values[0] },
+                Name = "Receitas",
+                Fill = new SolidColorPaint(SKColors.LightGreen),
+                MaxBarWidth = 40
+            },
+            new ColumnSeries<double>
+            {
+                Values = new double[]{ values[1] },
+                Name = "Despesas",
+                Fill = new SolidColorPaint(SKColors.IndianRed),
+                MaxBarWidth = 40
             }
         };
         ComparisonXAxis = new[]

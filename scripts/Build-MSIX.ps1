@@ -12,7 +12,9 @@ function Get-MSBuildPath {
   $paths = @(
     'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe',
     'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe',
-    'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+    'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe',
+    'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe',
+    'C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
   )
   foreach ($p in $paths) { if (Test-Path $p) { return $p } }
   throw 'MSBuild.exe não encontrado. Instale o Visual Studio 2022 (Community/Professional/Enterprise) com Windows App Packaging Tools.'
@@ -40,9 +42,9 @@ function Publish-MSIX([string]$plat) {
 
   $appPackages = Join-Path $repoRoot 'src\CoinCraft.Package\AppPackages'
   $pattern = "CoinCraft.Package_*.msix"
-  $searchDir = Join-Path $appPackages "CoinCraft.Package_1.0.0.0_${plat}_Test"
-  if (-not (Test-Path $searchDir)) { $searchDir = $appPackages }
-  $msix = Get-ChildItem -Path $searchDir -Filter $pattern -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+  # Busca robusta: pega o MSIX mais recente independente da versão/pasta
+  $msix = Get-ChildItem -Path $appPackages -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
+          Sort-Object LastWriteTime -Descending | Select-Object -First 1
   if (-not $msix) { throw "MSIX não encontrado para $plat em $appPackages" }
 
   $destName = "CoinCraft_${plat}.msix"

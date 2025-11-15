@@ -10,7 +10,9 @@
     <TargetPlatformVersion>10.0.22621.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <DefaultLanguage>pt-BR</DefaultLanguage>
-    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <PackageCertificateKeyFile>..\..\dist\CoinCraft_Distribuicao\CoinCraft_signing_legacy.pfx</PackageCertificateKeyFile>
+    <PackageCertificatePassword>CoinCraft#2025!</PackageCertificatePassword>
     <GenerateAppInstallerFile>false</GenerateAppInstallerFile>
     <EntryPointProjectUniqueName>..\CoinCraft.App\CoinCraft.App.csproj</EntryPointProjectUniqueName>
     <Platforms>x86;x64</Platforms>

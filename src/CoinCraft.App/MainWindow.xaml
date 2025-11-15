@@ -1,7 +1,7 @@
 <Window x:Class="CoinCraft.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="CodeCraft CLI — Offline" Height="560" Width="920" WindowStartupLocation="CenterScreen"
+        Title="CoinCraft — Offline" Height="560" Width="920" WindowStartupLocation="CenterScreen" Icon="Icon.ico"
         Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource AppForegroundBrush}"
         KeyDown="OnMainWindowKeyDown">
     <DockPanel LastChildFill="True">
@@ -55,8 +55,31 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Bem-vindo ao CodeCraft CLI (offline/local)"
-                       FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+            <TextBlock Text="Bem-vindo ao CoinCraft (offline/local)"
+                       FontSize="24" FontWeight="Bold" Margin="0,0,0,12"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </TextBlock.RenderTransform>
+                <TextBlock.Triggers>
+                    <EventTrigger RoutedEvent="MouseEnter">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1.06" Duration="0:0:0.15"/>
+                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1.06" Duration="0:0:0.15"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="MouseLeave">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.15"/>
+                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.15"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </TextBlock.Triggers>
+            </TextBlock>
             <StackPanel Grid.Row="1">
                 <TextBlock Text="Este é um esqueleto inicial. Cadastre Contas/Categorias e crie Lançamentos."
                            Margin="0,0,0,8"/>

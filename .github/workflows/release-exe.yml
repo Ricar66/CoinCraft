@@ -1,0 +1,63 @@
+name: Release Executables
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-exe:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore CoinCraft.sln
+
+      - name: Publish win-x64 (self-contained single file)
+        run: |
+          dotnet publish src/CoinCraft.App/CoinCraft.App.csproj \
+            -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true
+
+      - name: Publish win-x86 (self-contained single file)
+        run: |
+          dotnet publish src/CoinCraft.App/CoinCraft.App.csproj \
+            -c Release \
+            -r win-x86 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true
+
+      - name: Prepare dist folder
+        shell: pwsh
+        run: |
+          $repoRoot = "$PWD"
+          $dist = Join-Path $repoRoot 'dist/CoinCraft_Distribuicao'
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          $tfm = 'net8.0-windows10.0.19041.0'
+          $x64Pub = Join-Path $repoRoot "src/CoinCraft.App/bin/Release/$tfm/win-x64/publish/CoinCraft.App.exe"
+          $x86Pub = Join-Path $repoRoot "src/CoinCraft.App/bin/Release/$tfm/win-x86/publish/CoinCraft.App.exe"
+          if (-not (Test-Path $x64Pub)) { throw "Executable not found: $x64Pub" }
+          if (-not (Test-Path $x86Pub)) { throw "Executable not found: $x86Pub" }
+          Copy-Item $x64Pub (Join-Path $dist 'CoinCraft_win-x64.exe') -Force
+          Copy-Item $x86Pub (Join-Path $dist 'CoinCraft_win-x86.exe') -Force
+          Copy-Item -Force "dist/CoinCraft_Distribuicao/README.txt" $dist
+
+      - name: Upload artifact (CoinCraft_Distribuicao)
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoinCraft_Distribuicao
+          path: dist/CoinCraft_Distribuicao/*

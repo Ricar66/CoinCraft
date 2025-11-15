@@ -5,5 +5,13 @@
         <!-- Recursos de tema dinâmico -->
         <SolidColorBrush x:Key="AppBackgroundBrush" Color="#FFFFFFFF"/>
         <SolidColorBrush x:Key="AppForegroundBrush" Color="#FF000000"/>
+        
+        <!-- Tipografia padrão mais legível em toda a aplicação -->
+        <Style TargetType="Control">
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
     </Application.Resources>
 </Application>

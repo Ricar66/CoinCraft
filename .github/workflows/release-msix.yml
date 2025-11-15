@@ -1,0 +1,104 @@
+name: Release MSIX
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.3
+
+      - name: Restore NuGet packages
+        shell: pwsh
+        run: nuget restore CoinCraft.sln
+
+      - name: Build WAP x64
+        shell: pwsh
+        run: |
+          msbuild "src\\CoinCraft.Package\\CoinCraft.Package.wapproj" /
+            t:Build /
+            p:Configuration=Release /
+            p:Platform=x64
+
+      - name: Build WAP x86
+        shell: pwsh
+        run: |
+          msbuild "src\\CoinCraft.Package\\CoinCraft.Package.wapproj" /
+            t:Build /
+            p:Configuration=Release /
+            p:Platform=x86
+
+      - name: Prepare code signing certificate (optional)
+        if: ${{ secrets.COINCRAFT_PFX_BASE64 != '' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "scripts/certs" | Out-Null
+          $bytes = [Convert]::FromBase64String("${{ secrets.COINCRAFT_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("scripts/certs/CoinCraft_dev.pfx", $bytes)
+
+      - name: Sign MSIX packages (optional)
+        if: ${{ secrets.COINCRAFT_PFX_BASE64 != '' }}
+        shell: pwsh
+        run: |
+          $pfx = "scripts/certs/CoinCraft_dev.pfx"
+          $pwd = "${{ secrets.COINCRAFT_PFX_PASSWORD }}"
+          $signtool = "$Env:ProgramFiles(x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+          if (-not (Test-Path $signtool)) {
+            $candidate = Get-ChildItem "$Env:ProgramFiles(x86)\Windows Kits\10\bin" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'signtool.exe' -and $_.FullName -like '*\\x64\\*' } | Select-Object -ExpandProperty FullName -First 1
+            if ($candidate) { $signtool = $candidate } else { throw 'signtool.exe não encontrado no agente' }
+          }
+          Get-ChildItem -Recurse -Path src\CoinCraft.Package\AppPackages -Filter *.msix | ForEach-Object {
+            & $signtool sign /fd SHA256 /f $pfx /p $pwd /tr http://timestamp.digicert.com /td SHA256 $_.FullName
+          }
+
+      - name: Export public certificate (CER) from PFX (optional)
+        if: ${{ secrets.COINCRAFT_PFX_BASE64 != '' }}
+        shell: pwsh
+        run: |
+          $pfxPath = "scripts/certs/CoinCraft_dev.pfx"
+          $pwd = "${{ secrets.COINCRAFT_PFX_PASSWORD }}"
+          $secure = ConvertTo-SecureString -String $pwd -AsPlainText -Force
+          $cert = Get-PfxCertificate -FilePath $pfxPath -Password $secure
+          New-Item -ItemType Directory -Force -Path "dist/CoinCraft_Distribuicao" | Out-Null
+          Export-Certificate -Cert $cert -FilePath "dist/CoinCraft_Distribuicao/CoinCraft_public_der.cer" | Out-Null
+
+      - name: Prepare distribution folder with signed MSIX
+        shell: pwsh
+        run: |
+          $dist = "dist/CoinCraft_Distribuicao"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          $x64 = Get-ChildItem -Recurse -Path src\CoinCraft.Package\AppPackages -Filter *x64*.msix | Select-Object -First 1
+          $x86 = Get-ChildItem -Recurse -Path src\CoinCraft.Package\AppPackages -Filter *x86*.msix | Select-Object -First 1
+          if ($x64) { Copy-Item $x64.FullName "$dist/CoinCraft_x64.msix" -Force }
+          if ($x86) { Copy-Item $x86.FullName "$dist/CoinCraft_x86.msix" -Force }
+          Copy-Item -Force "scripts/Install-CoinCraft.ps1" $dist
+          Copy-Item -Force "scripts/Install-CoinCraft.cmd" $dist
+          Copy-Item -Force "dist/CoinCraft_Distribuicao/README.txt" $dist
+
+      - name: Upload artifact (CoinCraft_Distribuicao)
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoinCraft_Distribuicao
+          path: dist/CoinCraft_Distribuicao/*
+
+      - name: Create GitHub Release and upload assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/CoinCraft_Distribuicao/CoinCraft_x64.msix
+            dist/CoinCraft_Distribuicao/CoinCraft_x86.msix
+            dist/CoinCraft_Distribuicao/Install-CoinCraft.ps1
+            dist/CoinCraft_Distribuicao/Install-CoinCraft.cmd
+            dist/CoinCraft_Distribuicao/README.txt
+            dist/CoinCraft_Distribuicao/CoinCraft_public_der.cer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

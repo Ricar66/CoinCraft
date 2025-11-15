@@ -41,6 +41,7 @@ _ReSharper.Caches/
 dist/**/*.msix
 dist/**/*.msixbundle
 src/CoinCraft.Package/AppPackages/
+dist/PackageStage/
 
 # Distribution archives generated locally (attach via GitHub Releases)
 dist/**/*.zip
