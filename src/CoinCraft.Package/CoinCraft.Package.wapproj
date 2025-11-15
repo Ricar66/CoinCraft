@@ -3,7 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="..\CoinCraft.App\CoinCraft.App.csproj" />
   </ItemGroup>
-
   <PropertyGroup>
     <WapProj>true</WapProj>
     <OutputType>AppContainerExe</OutputType>
@@ -12,13 +11,12 @@
     <DefaultLanguage>pt-BR</DefaultLanguage>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>false</GenerateAppInstallerFile>
+    <EntryPointProjectUniqueName>..\CoinCraft.App\CoinCraft.App.csproj</EntryPointProjectUniqueName>
   </PropertyGroup>
-
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
     <Content Include="Assets\**\*.*" />
   </ItemGroup>
-
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets" />
 </Project>

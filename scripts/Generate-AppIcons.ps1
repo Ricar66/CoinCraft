@@ -62,9 +62,9 @@ Save-Png -Bitmap $icon44 -Path (Join-Path $OutputAssetsPath 'Square44x44Logo.png
 $icon150 = New-SquareImage -Image $img -Size 150
 Save-Png -Bitmap $icon150 -Path (Join-Path $OutputAssetsPath 'Square150x150Logo.png')
 
-# StoreLogo: 200x200 recommended
-$store200 = New-SquareImage -Image $img -Size 200
-Save-Png -Bitmap $store200 -Path (Join-Path $OutputAssetsPath 'StoreLogo.png')
+# StoreLogo: 50x50 required for DesktopBridge packaging
+$store50 = New-SquareImage -Image $img -Size 50
+Save-Png -Bitmap $store50 -Path (Join-Path $OutputAssetsPath 'StoreLogo.png')
 
 $img.Dispose()
 Write-Host "Ícones gerados em: $OutputAssetsPath" -ForegroundColor Green
