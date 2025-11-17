@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Input;
 using CoinCraft.Domain;
 
 namespace CoinCraft.App.Views;
@@ -11,7 +12,15 @@ public partial class AccountEditWindow : Window
 
     public AccountEditWindow(Account account)
     {
-        InitializeComponent();
+        try
+        {
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.ToString(), "Erro ao carregar janela", MessageBoxButton.OK, MessageBoxImage.Error);
+            throw;
+        }
         _account = account;
 
         // Bind enum values
@@ -51,4 +60,9 @@ public partial class AccountEditWindow : Window
         DialogResult = true;
         Close();
     }
+
+    private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void OnToggleMaximizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
+    private void OnHeaderMouseDown(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
 }

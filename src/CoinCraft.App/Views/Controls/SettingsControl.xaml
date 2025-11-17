@@ -1,0 +1,43 @@
+<UserControl x:Class="CoinCraft.App.Views.Controls.SettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel Orientation="Horizontal" Grid.Row="0">
+      <TextBlock Text="Configurações" FontSize="20" FontWeight="Bold"/>
+    </StackPanel>
+    <Grid Grid.Row="1">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <StackPanel Grid.Row="0">
+        <TextBlock Text="Tema"/>
+        <ComboBox x:Name="TemaCombo" Margin="0,4,0,12">
+          <ComboBoxItem>claro</ComboBoxItem>
+          <ComboBoxItem>escuro</ComboBoxItem>
+        </ComboBox>
+        <TextBlock Text="Moeda"/>
+        <ComboBox x:Name="MoedaCombo" Margin="0,4,0,12">
+          <ComboBoxItem>BRL</ComboBoxItem>
+          <ComboBoxItem>USD</ComboBoxItem>
+          <ComboBoxItem>EUR</ComboBoxItem>
+        </ComboBox>
+        <TextBlock Text="Tela inicial"/>
+        <ComboBox x:Name="TelaInicialCombo" Margin="0,4,0,12">
+          <ComboBoxItem>dashboard</ComboBoxItem>
+          <ComboBoxItem>lancamentos</ComboBoxItem>
+        </ComboBox>
+      </StackPanel>
+    </Grid>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Content="Salvar" Width="90" Margin="0,0,8,0" Click="OnSaveClick"/>
+      <Button Content="Aplicar pacote offline" Width="170" Margin="0,0,8,0" Click="OnApplyOfflineUpdateClick"/>
+    </StackPanel>
+  </Grid>
+</UserControl>

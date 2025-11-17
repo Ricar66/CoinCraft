@@ -23,6 +23,8 @@ namespace CoinCraft.Services.Licensing
         public string MachineFingerprint { get; set; } = string.Empty;
         public string InstalledAtIso8601 { get; set; } = string.Empty;
         public string? Notes { get; set; }
+        public string? ActivationToken { get; set; }
+        public string? ActivatedHardwareId { get; set; }
     }
 
     public sealed class LicenseValidationResult
@@ -30,5 +32,13 @@ namespace CoinCraft.Services.Licensing
         public bool IsValid { get; set; }
         public string? Message { get; set; }
         public License? License { get; set; }
+        public string? ActivationToken { get; set; }
+    }
+
+    public sealed class HardwareActivationResult
+    {
+        public bool Success { get; set; }
+        public string? ActivationToken { get; set; }
+        public string? Message { get; set; }
     }
 }

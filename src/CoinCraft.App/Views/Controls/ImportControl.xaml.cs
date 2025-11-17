@@ -1,0 +1,93 @@
+using System.Windows;
+using System.Windows.Controls;
+using CoinCraft.App.ViewModels;
+using CoinCraft.Domain;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CoinCraft.App.Views.Controls
+{
+    public partial class ImportControl : UserControl
+    {
+        private readonly ImportViewModel _vm = App.Services!.GetRequiredService<ImportViewModel>();
+
+        public ImportControl()
+        {
+            InitializeComponent();
+            DataContext = _vm;
+            Loaded += async (_, __) =>
+            {
+                await _vm.LoadLookupsAsync();
+                DefaultAccountCombo.ItemsSource = _vm.Accounts;
+                DefaultCategoryCombo.ItemsSource = _vm.Categories;
+                DefaultTipoCombo.ItemsSource = System.Enum.GetValues(typeof(TransactionType));
+            };
+        }
+
+        
+
+        private void OnSelectFile(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Arquivos suportados (*.csv;*.ofx;*.qfx)|*.csv;*.ofx;*.qfx|CSV (*.csv)|*.csv|OFX/QFX (*.ofx;*.qfx)|*.ofx;*.qfx|Todos os arquivos (*.*)|*.*",
+                Title = "Selecionar arquivo para importação"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                FilePathText.Text = dlg.FileName;
+                _vm.LoadFile(dlg.FileName);
+                PreviewGrid.ItemsSource = _vm.Items;
+                StatusText.Text = _vm.StatusMessage;
+
+                if (dlg.FileName.EndsWith(".csv", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    MappingGroup.Visibility = Visibility.Visible;
+                    MapDataCombo.ItemsSource = _vm.HeaderColumns;
+                    MapDescricaoCombo.ItemsSource = _vm.HeaderColumns;
+                    MapValorCombo.ItemsSource = _vm.HeaderColumns;
+                    MapTipoCombo.ItemsSource = _vm.HeaderColumns;
+                    MapContaCombo.ItemsSource = _vm.HeaderColumns;
+                    MapCategoriaCombo.ItemsSource = _vm.HeaderColumns;
+                }
+                else
+                {
+                    MappingGroup.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        private void OnImportClick(object sender, RoutedEventArgs e)
+        {
+            var defaultAccId = DefaultAccountCombo.SelectedValue as int?;
+            var defaultCatId = DefaultCategoryCombo.SelectedValue as int?;
+            var defaultTipo = DefaultTipoCombo.SelectedItem is TransactionType t ? t : (TransactionType?)null;
+            var saved = _vm.Import(defaultAccId, defaultCatId, defaultTipo);
+            StatusText.Text = _vm.StatusMessage;
+            MessageBox.Show($"Importação concluída: {saved} lançamento(s)", "Importar", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void OnApplyMappingClick(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(_vm.FilePath) || !_vm.FilePath.EndsWith(".csv", System.StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var map = new System.Collections.Generic.Dictionary<string, int>();
+            int idxOf(object? sel) => sel is string s ? _vm.HeaderColumns.IndexOf(s) : -1;
+            void add(string key, object? sel)
+            {
+                var idx = idxOf(sel);
+                if (idx >= 0) map[key] = idx;
+            }
+            add("data", MapDataCombo.SelectedItem);
+            add("descricao", MapDescricaoCombo.SelectedItem);
+            add("valor", MapValorCombo.SelectedItem);
+            add("tipo", MapTipoCombo.SelectedItem);
+            add("conta", MapContaCombo.SelectedItem);
+            add("categoria", MapCategoriaCombo.SelectedItem);
+
+            _vm.LoadFileWithMapping(_vm.FilePath!, map);
+            PreviewGrid.ItemsSource = _vm.Items;
+            StatusText.Text = _vm.StatusMessage;
+        }
+    }
+}

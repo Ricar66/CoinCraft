@@ -12,6 +12,7 @@ namespace CoinCraft.Services.Licensing
         Task<LicenseValidationResult> EnsureLicensedAsync(Func<Task<string?>> licenseKeyProvider);
         Task<LicenseValidationResult> ValidateExistingAsync();
         Task<bool> TransferAsync(string toFingerprint);
+        LicenseValidationResult ActivateOffline();
         LicenseState CurrentState { get; }
         License? CurrentLicense { get; }
         string CurrentFingerprint { get; }
@@ -70,7 +71,7 @@ namespace CoinCraft.Services.Licensing
             var existing = LicensingStorage.Load();
             if (existing != null)
             {
-                var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint);
+                var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint, existing.ActivationToken);
                 UpdateState(r.License, r.IsValid);
                 if (r.IsValid)
                 {
@@ -87,7 +88,10 @@ namespace CoinCraft.Services.Licensing
             var result = await _apiClient.ValidateLicenseAsync(key!, _fingerprint);
             if (!result.IsValid) { UpdateState(result.License, false); return result; }
 
-            // Register installation and persist locally
+            var act = await _apiClient.ActivateHardwareAsync(key!, _fingerprint);
+            if (!act.Success || string.IsNullOrWhiteSpace(act.ActivationToken))
+                return new LicenseValidationResult { IsValid = false, Message = act.Message ?? "Falha na ativação por hardware" };
+
             var ok = await _apiClient.RegisterInstallationAsync(key!, _fingerprint);
             if (!ok)
                 return new LicenseValidationResult { IsValid = false, Message = "Falha ao registrar instalação" };
@@ -96,7 +100,9 @@ namespace CoinCraft.Services.Licensing
             {
                 LicenseKey = key!,
                 MachineFingerprint = _fingerprint,
-                InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O")
+                InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
+                ActivationToken = act.ActivationToken,
+                ActivatedHardwareId = _fingerprint
             });
 
             UpdateState(result.License, true);
@@ -110,9 +116,29 @@ namespace CoinCraft.Services.Licensing
             if (existing == null)
                 return new LicenseValidationResult { IsValid = false, Message = "Sem licença local" };
 
-            var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint);
+            var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint, existing.ActivationToken);
             UpdateState(r.License, r.IsValid);
             return r;
+        }
+
+        public LicenseValidationResult ActivateOffline()
+        {
+            var rec = new InstallationRecord
+            {
+                LicenseKey = "OFFLINE",
+                MachineFingerprint = _fingerprint,
+                InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
+                ActivationToken = "OFFLINE",
+                ActivatedHardwareId = _fingerprint
+            };
+            LicensingStorage.Save(rec);
+            UpdateState(new License { LicenseKey = "OFFLINE", State = LicenseState.Active }, true);
+            return new LicenseValidationResult
+            {
+                IsValid = true,
+                Message = "Licença offline gerada",
+                License = CurrentLicense
+            };
         }
 
         public async Task<bool> TransferAsync(string toFingerprint)

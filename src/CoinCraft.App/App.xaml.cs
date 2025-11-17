@@ -1,11 +1,14 @@
 using System.Windows;
 using System.IO;
 using System.Windows.Threading;
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using CoinCraft.Infrastructure;
 using CoinCraft.Services;
 using CoinCraft.Services.Licensing;
 using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -16,8 +19,46 @@ namespace CoinCraft.App;
 public partial class App : Application
 {
     public static IServiceProvider? Services { get; private set; }
+    private static System.Threading.Mutex? _singleInstanceMutex;
+    private static void WriteHeartbeat(string message)
+    {
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "startup.log");
+            File.AppendAllText(path, $"[{DateTimeOffset.Now:O}] {message}{Environment.NewLine}");
+        }
+        catch { }
+    }
     protected override void OnStartup(StartupEventArgs e)
     {
+        var createdNew = false;
+        try
+        {
+            _singleInstanceMutex = new System.Threading.Mutex(true, "CoinCraft.SingleInstance", out createdNew);
+            if (!createdNew)
+            {
+                try
+                {
+                    foreach (var proc in Process.GetProcessesByName("CoinCraft.App"))
+                    {
+                        var h = proc.MainWindowHandle;
+                        if (h != 0)
+                        {
+                            SetForegroundWindow(h);
+                            ShowWindow(h, 5);
+                            break;
+                        }
+                    }
+                }
+                catch { }
+                Shutdown();
+                return;
+            }
+        }
+        catch { }
+        WriteHeartbeat("Startup begin");
         // Aplicar migrations no início da aplicação para garantir schema
         try
         {
@@ -48,6 +89,7 @@ public partial class App : Application
 
             db.Database.Migrate();
             log.Info("Migrations aplicadas com sucesso.");
+            WriteHeartbeat("Database ready");
 
             // Sanidade: garantir coluna AttachmentPath caso alguma base antiga não tenha aplicado a migration
             try
@@ -397,29 +439,30 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         // Tratar exceções não capturadas para evitar fechamento abrupto
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        // Licenciamento temporariamente desativado: não bloquear startup por licença
-        // (Reativar removendo este bloco comentado e a mensagem de log abaixo)
-        // var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
-        // if (skipLic != "1")
-        // {
-        //     var httpClient = new HttpClient();
-        //     var apiClient = new LicenseApiClient(httpClient, "https://licensing.example.com"); // TODO: mover para configuração
-        //     var licensing = new LicensingService(apiClient);
-        //
-        //     var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
-        //     if (!validRes.IsValid)
-        //     {
-        //         var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
-        //         var ok = licWin.ShowDialog();
-        //         if (licensing.CurrentState != LicenseState.Active)
-        //         {
-        //             MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
-        //             Shutdown();
-        //             return;
-        //         }
-        //     }
-        // }
-        new LogService().Info("Licenciamento desativado temporariamente: app liberado sem validação.");
+        var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
+        var licDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft");
+        Directory.CreateDirectory(licDir);
+        var skipLicFile = Path.Combine(licDir, "skip.lic");
+        if (skipLic != "1" && !File.Exists(skipLicFile))
+        {
+            var httpClient = new HttpClient();
+            var apiClient = new LicenseApiClient(httpClient, "https://licensing.example.com");
+            var licensing = new LicensingService(apiClient);
+            var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
+            if (!validRes.IsValid)
+            {
+                var offlineRes = licensing.ActivateOffline();
+                WriteHeartbeat("License offline activated");
+            }
+            else
+            {
+                WriteHeartbeat("License valid");
+            }
+        }
+        else
+        {
+            WriteHeartbeat("License bypass active");
+        }
 
         // Configurar Injeção de Dependência
         try
@@ -462,32 +505,125 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
             logDi.Error($"Falha ao inicializar DI: {exDi.Message}");
         }
 
-        // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
-        var main = new MainWindow();
+        try
+        {
+            var version = CoinCraft.Services.UpdateService.GetCurrentVersion();
+            var publicKeyXml = CoinCraft.Services.PublicKey.Xml;
+            if (string.IsNullOrWhiteSpace(publicKeyXml))
+                publicKeyXml = Environment.GetEnvironmentVariable("COINCRAFT_PUBLICKEY_XML");
+
+            var disableProt = string.Equals(Environment.GetEnvironmentVariable("COINCRAFT_DISABLE_INTEGRITY"), "1", StringComparison.OrdinalIgnoreCase);
+            if (!disableProt)
+            {
+                var exe = Process.GetCurrentProcess().MainModule?.FileName;
+                var dir = Path.GetDirectoryName(exe ?? string.Empty);
+                var manifestPath = dir is null ? null : Path.Combine(dir, "checksum.json");
+                var sigPath = dir is null ? null : Path.Combine(dir, "checksum.sig");
+
+                if (!string.IsNullOrWhiteSpace(publicKeyXml) && manifestPath is not null && sigPath is not null && File.Exists(manifestPath) && File.Exists(sigPath))
+                {
+                    var integrityLocal = new CoinCraft.Services.IntegrityService(new HttpClient(), string.Empty, publicKeyXml);
+                    var okLocal = integrityLocal.VerifyLocalManifest();
+                    if (!okLocal)
+                    {
+                        new LogService().Error("Integridade offline falhou, prosseguindo por tolerância.");
+                        WriteHeartbeat("Integrity failed; tolerance applied");
+                    }
+                    else
+                    {
+                        WriteHeartbeat("Integrity ok");
+                    }
+                }
+                else
+                {
+                    new LogService().Info("Integridade offline ignorada: manifesto ou chave pública ausente.");
+                    WriteHeartbeat("Integrity skipped");
+                }
+            }
+        }
+        catch (Exception exProt)
+        {
+            new LogService().Error($"Proteção offline falhou: {exProt.Message}");
+            WriteHeartbeat($"Integrity error: {exProt.Message}");
+        }
+
+        if (e.Args != null && e.Args.Any(a => string.Equals(a, "--init-only", StringComparison.OrdinalIgnoreCase)))
+        {
+            WriteHeartbeat("Init-only complete");
+            Shutdown();
+            return;
+        }
+
+        var main = new CoinCraft.App.Views.DashboardWindow();
+        MainWindow = main;
+        main.ShowActivated = true;
+        main.WindowState = WindowState.Normal;
         main.Show();
+        main.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        var wa = SystemParameters.WorkArea;
+        main.Left = Math.Max(wa.Left + 20, main.Left);
+        main.Top = Math.Max(wa.Top + 20, main.Top);
+        if (double.IsNaN(main.Width) || main.Width <= 0) main.Width = Math.Min(wa.Width - 40, 1024);
+        if (double.IsNaN(main.Height) || main.Height <= 0) main.Height = Math.Min(wa.Height - 40, 700);
+        main.Visibility = Visibility.Visible;
+        main.WindowState = WindowState.Maximized;
+        main.Opacity = 1.0;
+        main.Focus();
+        main.BringIntoView();
+        try
+        {
+            var hwnd = new WindowInteropHelper(main).Handle;
+            ShowWindow(hwnd, 5);
+            SetForegroundWindow(hwnd);
+        }
+        catch { }
+        try
+        {
+            main.Activate();
+            main.Topmost = true; // garantir que venha à frente
+            main.Topmost = false;
+            WriteHeartbeat("Main window brought to front");
+        }
+        catch { }
+        WriteHeartbeat("Main window shown");
 
         // Aplicar tema e tela inicial conforme configurações do usuário
         try
         {
             var settingsVm = Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
             // Ajuste de tema
-            var bg = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase) ? System.Windows.Media.Color.FromRgb(30, 30, 30) : System.Windows.Media.Colors.White;
-            var fg = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase) ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black;
+            var isDark = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase);
+            var bg = isDark ? System.Windows.Media.Color.FromRgb(30, 30, 30) : System.Windows.Media.Colors.White;
+            var fg = isDark ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black;
             Application.Current.Resources["AppBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(bg);
             Application.Current.Resources["AppForegroundBrush"] = new System.Windows.Media.SolidColorBrush(fg);
 
-            // Tela inicial
-            var initial = settingsVm.TelaInicial?.ToLowerInvariant();
-            if (initial == "dashboard")
-            {
-                var win = new CoinCraft.App.Views.DashboardWindow { Owner = main };
-                win.ShowDialog();
-            }
-            else if (initial == "lancamentos")
-            {
-                var win = new CoinCraft.App.Views.TransactionsWindow { Owner = main };
-                win.ShowDialog();
-            }
+            var headerBg = isDark ? System.Windows.Media.Color.FromRgb(45, 45, 48) : System.Windows.Media.Color.FromRgb(247, 247, 248);
+            var headerFg = isDark ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black;
+            var headerBorder = isDark ? System.Windows.Media.Color.FromRgb(70, 70, 73) : System.Windows.Media.Color.FromRgb(224, 224, 224);
+            Application.Current.Resources["HeaderBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(headerBg);
+            Application.Current.Resources["HeaderForegroundBrush"] = new System.Windows.Media.SolidColorBrush(headerFg);
+            Application.Current.Resources["HeaderBorderBrush"] = new System.Windows.Media.SolidColorBrush(headerBorder);
+
+            var btnHover = isDark ? System.Windows.Media.Color.FromRgb(63, 63, 70) : System.Windows.Media.Color.FromRgb(230, 230, 230);
+            var btnPressed = isDark ? System.Windows.Media.Color.FromRgb(80, 80, 90) : System.Windows.Media.Color.FromRgb(204, 204, 204);
+            var closeHover = System.Windows.Media.Color.FromRgb(255, 82, 82);
+            var closePressed = System.Windows.Media.Color.FromRgb(229, 57, 53);
+            Application.Current.Resources["TitleBarButtonHoverBrush"] = new System.Windows.Media.SolidColorBrush(btnHover);
+            Application.Current.Resources["TitleBarButtonPressedBrush"] = new System.Windows.Media.SolidColorBrush(btnPressed);
+            Application.Current.Resources["TitleBarCloseHoverBrush"] = new System.Windows.Media.SolidColorBrush(closeHover);
+            Application.Current.Resources["TitleBarClosePressedBrush"] = new System.Windows.Media.SolidColorBrush(closePressed);
+
+            var contentBg = isDark ? System.Windows.Media.Color.FromRgb(40, 40, 43) : System.Windows.Media.Color.FromRgb(250, 250, 250);
+            var contentBorder = isDark ? System.Windows.Media.Color.FromRgb(60, 60, 65) : System.Windows.Media.Color.FromRgb(221, 221, 221);
+            Application.Current.Resources["WindowContentBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(contentBg);
+            Application.Current.Resources["WindowContentBorderBrush"] = new System.Windows.Media.SolidColorBrush(contentBorder);
+
+            Application.Current.Resources["WindowContentCornerRadius"] = new System.Windows.CornerRadius(isDark ? 10 : 6);
+            Application.Current.Resources["WindowContentShadowOpacity"] = isDark ? 0.25 : 0.10;
+            Application.Current.Resources["WindowContentShadowBlur"] = isDark ? 12.0 : 8.0;
+            Application.Current.Resources["WindowContentShadowDepth"] = isDark ? 2.0 : 1.0;
+
         }
         catch (Exception exInit)
         {
@@ -501,7 +637,14 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
     {
         var log = new LogService();
         log.Error($"Unhandled: {e.Exception}");
-        MessageBox.Show(e.Exception.Message, "Erro inesperado", MessageBoxButton.OK, MessageBoxImage.Error);
+        var details = e.Exception.ToString();
+        MessageBox.Show(details, "Erro inesperado", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(nint hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
 }

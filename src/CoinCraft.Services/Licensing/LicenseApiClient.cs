@@ -7,11 +7,12 @@ namespace CoinCraft.Services.Licensing
 {
     public interface ILicenseApiClient
     {
-        Task<LicenseValidationResult> ValidateLicenseAsync(string licenseKey, string machineFingerprint);
+        Task<LicenseValidationResult> ValidateLicenseAsync(string licenseKey, string machineFingerprint, string? activationToken = null);
         Task<License?> PurchaseLicenseAsync(string purchaserUserId);
         Task<bool> RegisterInstallationAsync(string licenseKey, string machineFingerprint);
         Task<bool> TransferLicenseAsync(string licenseKey, string fromFingerprint, string toFingerprint);
         Task<bool> DeactivateInstallationAsync(string licenseKey, string machineFingerprint);
+        Task<HardwareActivationResult> ActivateHardwareAsync(string licenseKey, string hardwareId);
     }
 
     public sealed class LicenseApiClient : ILicenseApiClient
@@ -25,13 +26,12 @@ namespace CoinCraft.Services.Licensing
             _baseUrl = baseUrl.TrimEnd('/');
         }
 
-        public async Task<LicenseValidationResult> ValidateLicenseAsync(string licenseKey, string machineFingerprint)
+        public async Task<LicenseValidationResult> ValidateLicenseAsync(string licenseKey, string machineFingerprint, string? activationToken = null)
         {
             try
             {
                 var url = $"{_baseUrl}/api/licenses/validate";
-                var payload = new { licenseKey, machineFingerprint };
-                // Placeholder: adjust to your server contract
+                var payload = new { licenseKey, machineFingerprint, activationToken };
                 var response = await _http.PostAsJsonAsync(url, payload);
                 if (!response.IsSuccessStatusCode)
                     return new LicenseValidationResult { IsValid = false, Message = $"HTTP {(int)response.StatusCode}" };
@@ -91,6 +91,24 @@ namespace CoinCraft.Services.Licensing
                 return response.IsSuccessStatusCode;
             }
             catch { return false; }
+        }
+
+        public async Task<HardwareActivationResult> ActivateHardwareAsync(string licenseKey, string hardwareId)
+        {
+            try
+            {
+                var url = $"{_baseUrl}/api/licenses/activate-hardware";
+                var payload = new { licenseKey, hardwareId };
+                var response = await _http.PostAsJsonAsync(url, payload);
+                if (!response.IsSuccessStatusCode)
+                    return new HardwareActivationResult { Success = false, Message = $"HTTP {(int)response.StatusCode}" };
+                var result = await response.Content.ReadFromJsonAsync<HardwareActivationResult>();
+                return result ?? new HardwareActivationResult { Success = false, Message = "Resposta inválida" };
+            }
+            catch (Exception ex)
+            {
+                return new HardwareActivationResult { Success = false, Message = ex.Message };
+            }
         }
     }
 }
