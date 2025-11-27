@@ -1,17 +1,15 @@
-using System.Net.Http;
 using System.Windows;
-using CoinCraft.App.ViewModels;
 using CoinCraft.Services.Licensing;
+using CoinCraft.App.ViewModels;
 
 namespace CoinCraft.App.Views
 {
     public partial class LicenseWindow : Window
     {
-        public LicenseWindow(ILicensingService licensingService, ILicenseApiClient apiClient)
+        public LicenseWindow(ILicensingService licensingService)
         {
             InitializeComponent();
-            var vm = new LicenseViewModel(licensingService);
-            DataContext = vm;
+            this.DataContext = new LicenseViewModel(licensingService);
         }
     }
 }

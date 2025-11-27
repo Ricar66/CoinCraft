@@ -472,7 +472,7 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
             var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
             if (!validRes.IsValid)
             {
-                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
+                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
                 var ok = licWin.ShowDialog();
                 var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
                 if (!activated)
