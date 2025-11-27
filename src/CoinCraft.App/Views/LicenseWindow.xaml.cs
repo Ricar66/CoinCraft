@@ -10,15 +10,7 @@ namespace CoinCraft.App.Views
         public LicenseWindow(ILicensingService licensingService, ILicenseApiClient apiClient)
         {
             InitializeComponent();
-            var vm = new LicenseViewModel(licensingService, apiClient);
-            vm.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(vm.StatusText) && vm.StatusText.Contains("Licença ativa"))
-                {
-                    DialogResult = true;
-                    Close();
-                }
-            };
+            var vm = new LicenseViewModel(licensingService);
             DataContext = vm;
         }
     }

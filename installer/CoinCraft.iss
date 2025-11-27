@@ -38,7 +38,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; O comando de publish deve ter sido: dotnet publish ... -o ./publish
 Source: "..\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\publish\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\publish\*.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\publish\LatoFont\*"; DestDir: "{app}\LatoFont"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

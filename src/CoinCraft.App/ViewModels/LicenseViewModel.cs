@@ -1,106 +1,98 @@
-using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CoinCraft.Services.Licensing;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace CoinCraft.App.ViewModels
 {
-    public sealed class LicenseViewModel : INotifyPropertyChanged
+    public partial class LicenseViewModel : ObservableObject
     {
-        private readonly ILicensingService _licensing;
-        private readonly ILicenseApiClient _api;
+        private readonly ILicensingService _licensingService;
+
+        [ObservableProperty]
+        private string _hardwareId = string.Empty;
+
+        [ObservableProperty]
         private string _licenseKey = string.Empty;
-        private string _status = "Status desconhecido";
-        private string _installs = "-";
-        private bool _busy;
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        [ObservableProperty]
+        private string _statusMessage = string.Empty;
 
-        public LicenseViewModel(ILicensingService licensing, ILicenseApiClient api)
+        [ObservableProperty]
+        private string _currentStatus = string.Empty;
+
+        [ObservableProperty]
+        private string _remainingInstalls = string.Empty;
+
+        [ObservableProperty]
+        private string _transferTarget = string.Empty;
+
+        public LicenseViewModel(ILicensingService licensingService)
         {
-            _licensing = licensing;
-            _api = api;
-            ActivateCommand = new AsyncCommand(ActivateAsync, () => !_busy);
-            PurchaseCommand = new AsyncCommand(PurchaseAsync, () => !_busy);
-            RefreshUi();
-        }
+            _licensingService = licensingService;
 
-        public string LicenseKey
-        {
-            get => _licenseKey;
-            set { _licenseKey = value; OnPropertyChanged(); }
-        }
-
-        public string StatusText
-        {
-            get => _status;
-            private set { _status = value; OnPropertyChanged(); }
-        }
-
-        public string RemainingInstallsText
-        {
-            get => _installs;
-            private set { _installs = value; OnPropertyChanged(); }
-        }
-
-        public ICommand ActivateCommand { get; }
-        public ICommand PurchaseCommand { get; }
-
-        private async Task ActivateAsync()
-        {
-            _busy = true; ((AsyncCommand)ActivateCommand).RaiseCanExecuteChanged(); ((AsyncCommand)PurchaseCommand).RaiseCanExecuteChanged();
-            var res = await _licensing.EnsureLicensedAsync(async () => LicenseKey);
-            StatusText = res.IsValid ? "Licença ativa" : ($"Falha: {res.Message}");
-            RemainingInstallsText = _licensing.CurrentLicense?.RemainingInstallations.ToString() ?? "-";
-            _busy = false; ((AsyncCommand)ActivateCommand).RaiseCanExecuteChanged(); ((AsyncCommand)PurchaseCommand).RaiseCanExecuteChanged();
-        }
-
-        private async Task PurchaseAsync()
-        {
-            _busy = true; ((AsyncCommand)ActivateCommand).RaiseCanExecuteChanged(); ((AsyncCommand)PurchaseCommand).RaiseCanExecuteChanged();
-            // Em um app real, use a conta do usuário logado
-            var license = await _api.PurchaseLicenseAsync("current-user");
-            if (license != null)
+            HardwareId = _licensingService.CurrentFingerprint;
+            if (string.IsNullOrEmpty(HardwareId))
             {
-                LicenseKey = license.LicenseKey;
-                RemainingInstallsText = license.RemainingInstallations.ToString();
-                StatusText = "Licença adquirida. Clique em Ativar.";
+                HardwareId = MachineIdProvider.ComputeFingerprint();
+                if (string.IsNullOrEmpty(HardwareId)) HardwareId = "HWID-GENERICO-FALLBACK";
+            }
+
+            CurrentStatus = _licensingService.CurrentState.ToString();
+            RemainingInstalls = _licensingService.CurrentLicense?.RemainingInstallations.ToString() ?? "-";
+        }
+
+        [RelayCommand]
+        private void CopyId()
+        {
+            if (!string.IsNullOrEmpty(HardwareId))
+            {
+                Clipboard.SetText(HardwareId);
+                StatusMessage = "ID copiado para a área de transferência!";
+            }
+        }
+
+        [RelayCommand]
+        private async Task Activate()
+        {
+            if (string.IsNullOrWhiteSpace(LicenseKey))
+            {
+                StatusMessage = "Por favor, cole a licença gerada no site.";
+                return;
+            }
+
+            var result = await _licensingService.EnsureLicensedAsync(() => Task.FromResult<string?>(LicenseKey));
+            if (result.IsValid)
+            {
+                MessageBox.Show("Licença ativada com sucesso! O aplicativo será reiniciado.", "Sucesso");
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window is Views.LicenseWindow)
+                    {
+                        window.DialogResult = true;
+                        window.Close();
+                    }
+                }
+                CurrentStatus = _licensingService.CurrentState.ToString();
+                RemainingInstalls = _licensingService.CurrentLicense?.RemainingInstallations.ToString() ?? "-";
             }
             else
             {
-                StatusText = "Falha na compra";
+                StatusMessage = "Licença inválida para este computador.";
             }
-            _busy = false; ((AsyncCommand)ActivateCommand).RaiseCanExecuteChanged(); ((AsyncCommand)PurchaseCommand).RaiseCanExecuteChanged();
         }
 
-        private void RefreshUi()
+        [RelayCommand]
+        private async Task Transfer()
         {
-            StatusText = _licensing.CurrentState switch
+            if (string.IsNullOrWhiteSpace(TransferTarget))
             {
-                LicenseState.Active => "Licença ativa",
-                LicenseState.Inactive => "Licença inativa",
-                LicenseState.Revoked => "Licença revogada",
-                LicenseState.Expired => "Licença expirada",
-                _ => "Status desconhecido"
-            };
-            RemainingInstallsText = _licensing.CurrentLicense?.RemainingInstallations.ToString() ?? "-";
-        }
-
-        private void OnPropertyChanged([CallerMemberName] string? name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-        private sealed class AsyncCommand : ICommand
-        {
-            private readonly Func<Task> _execute;
-            private readonly Func<bool> _canExecute;
-            public AsyncCommand(Func<Task> execute, Func<bool> canExecute)
-            { _execute = execute; _canExecute = canExecute; }
-            public bool CanExecute(object? parameter) => _canExecute();
-            public event EventHandler? CanExecuteChanged;
-            public async void Execute(object? parameter) => await _execute();
-            public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+                StatusMessage = "Informe o fingerprint de destino para transferir.";
+                return;
+            }
+            var ok = await _licensingService.TransferAsync(TransferTarget);
+            StatusMessage = ok ? "Licença transferida." : "Falha ao transferir licença.";
         }
     }
 }

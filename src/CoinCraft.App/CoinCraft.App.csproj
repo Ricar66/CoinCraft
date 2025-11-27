@@ -10,6 +10,8 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <Platforms>AnyCPU;x86;x64</Platforms>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <StartupObject>CoinCraft.App.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CoinCraft.Domain\CoinCraft.Domain.csproj" />
