@@ -10,6 +10,7 @@ using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace CoinCraft.App;
 
@@ -460,6 +461,39 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         {
             var logDi = new LogService();
             logDi.Error($"Falha ao inicializar DI: {exDi.Message}");
+        }
+
+        var devMode = string.Equals(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase) || Debugger.IsAttached;
+        if (!devMode)
+        {
+            var httpClient = Services!.GetRequiredService<HttpClient>();
+            var apiClient = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicenseApiClient>();
+            var licensing = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicensingService>();
+            var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
+            if (!validRes.IsValid)
+            {
+                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
+                var ok = licWin.ShowDialog();
+                var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
+                if (!activated)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
+        }
+        else
+        {
+            try
+            {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var licDir = Path.Combine(appData, "CoinCraft");
+                Directory.CreateDirectory(licDir);
+                var skipLicFile = Path.Combine(licDir, "skip.lic");
+                if (!File.Exists(skipLicFile))
+                    File.WriteAllText(skipLicFile, "dev-bypass");
+            }
+            catch { }
         }
 
         // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
