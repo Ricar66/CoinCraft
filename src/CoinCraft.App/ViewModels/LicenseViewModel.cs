@@ -75,17 +75,6 @@ namespace CoinCraft.App.ViewModels
                         window.Close();
                     }
                 }
-                try
-                {
-                    var exe = System.Environment.ProcessPath;
-                    if (!string.IsNullOrEmpty(exe))
-                    {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
-                        System.Windows.Application.Current.Shutdown();
-                        return;
-                    }
-                }
-                catch { }
                 CurrentStatus = _licensingService.CurrentState.ToString();
                 RemainingInstalls = _licensingService.CurrentLicense?.RemainingInstallations.ToString() ?? "-";
             }
