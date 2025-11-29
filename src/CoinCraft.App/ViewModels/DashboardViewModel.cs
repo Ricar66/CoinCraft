@@ -55,15 +55,29 @@ public sealed partial class DashboardViewModel : ObservableObject
     public decimal TotalReceitas
     {
         get => _totalReceitas;
-        private set => SetProperty(ref _totalReceitas, value);
+        private set
+        {
+            if (SetProperty(ref _totalReceitas, value))
+            {
+                OnPropertyChanged(nameof(TotalSaldo));
+            }
+        }
     }
 
     private decimal _totalDespesas;
     public decimal TotalDespesas
     {
         get => _totalDespesas;
-        private set => SetProperty(ref _totalDespesas, value);
+        private set
+        {
+            if (SetProperty(ref _totalDespesas, value))
+            {
+                OnPropertyChanged(nameof(TotalSaldo));
+            }
+        }
     }
+
+    public decimal TotalSaldo => TotalReceitas - TotalDespesas;
 
     private ObservableCollection<CategorySlice> _despesasPorCategoria = new();
     public ObservableCollection<CategorySlice> DespesasPorCategoria

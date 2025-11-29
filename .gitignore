@@ -1,9 +1,8 @@
-**/bin/
-**/obj/
-**/publish/
-**/admin_publish/
-**/publish-keygen/
-/installer/Output/
-/*.user
-/*.suo
-/.vs/
+bin/
+obj/
+.vs/
+*.user
+publish/
+publish_final/
+dist/
+*.pdb

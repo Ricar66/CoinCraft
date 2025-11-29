@@ -3,219 +3,346 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="Dashboard" MinWidth="900" MinHeight="600" WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource AppForegroundBrush}">
+        Title="Dashboard - CoinCraft" MinWidth="1024" MinHeight="768" WindowStartupLocation="CenterOwner"
+        Background="#F5F5F7" Foreground="#333333">
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <!-- Paleta e estilos básicos -->
-        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#F7F7F8"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#3F51B5"/>
-        <SolidColorBrush x:Key="SuccessLightBrush" Color="#E8F5E9"/>
-        <SolidColorBrush x:Key="DangerLightBrush" Color="#FFEBEE"/>
+        
+        <!-- Colors -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#3F51B5"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#4CAF50"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#F44336"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#212121"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#E0E0E0"/>
 
-        <Style x:Key="CardBorder" TargetType="Border">
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="CornerRadius" Value="12"/>
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0,0,20,20"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.2"/>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.05"/>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <Style x:Key="SectionHeaderText" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="16"/>
+        <!-- Header Style -->
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+
+        <!-- KPI Label Style -->
+        <Style x:Key="KpiLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <!-- KPI Value Style -->
+        <Style x:Key="KpiValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="28"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="0,0,12,8"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         </Style>
 
+        <!-- Button Style -->
         <Style TargetType="Button">
-            <Setter Property="Padding" Value="6,3"/>
-            <Setter Property="Margin" Value="6,0,0,0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
-
+        
+        <!-- DatePicker Style -->
         <Style TargetType="DatePicker">
-            <Setter Property="Width" Value="160"/>
-            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0"/>
+            <Setter Property="Width" Value="140"/>
+            <Setter Property="Padding" Value="4"/>
         </Style>
-
-        <Style TargetType="GroupBox">
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="Margin" Value="0,12,0,0"/>
-        </Style>
+        
     </Window.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
 
-        <Menu Grid.Row="0">
-            <MenuItem Header="Início" Click="OnGoDashboard"/>
-            <MenuItem Header="Lançamentos" Click="OnGoTransactions"/>
-            <MenuItem Header="Contas" Click="OnGoAccounts"/>
-            <MenuItem Header="Categorias" Click="OnGoCategories"/>
-            <MenuItem Header="Recorrentes" Click="OnGoRecurring"/>
-            <MenuItem Header="Importar" Click="OnGoImport"/>
-            <MenuItem Header="Configurações" Click="OnGoSettings"/>
-        </Menu>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Menu -->
+                <RowDefinition Height="Auto"/> <!-- Header + Filter -->
+                <RowDefinition Height="Auto"/> <!-- KPIs -->
+                <RowDefinition Height="400"/>  <!-- Main Charts -->
+                <RowDefinition Height="Auto"/> <!-- Lists -->
+                <RowDefinition Height="Auto"/> <!-- Net Worth -->
+            </Grid.RowDefinitions>
 
-        <!-- Cabeçalho e filtros -->
-        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,16">
-            <DockPanel>
-                <TextBlock Text="Dashboard" FontSize="22" FontWeight="Bold" DockPanel.Dock="Left"/>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <Button Content="Nova Transação" Click="OnGoTransactions"/>
-                    <Button Content="Exportar Relatório" Command="{Binding ExportReportCommand}"/>
-                </StackPanel>
-            </DockPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,0" IsEnabled="{Binding CanApply}">
-            <StackPanel.Resources>
-                <Style TargetType="FrameworkElement">
-                    <Setter Property="Margin" Value="0,0,8,0"/>
-                </Style>
-            </StackPanel.Resources>
-            <TextBlock Text="Período:" VerticalAlignment="Center"/>
-            <TextBlock Text="De" VerticalAlignment="Center"/>
-            <DatePicker x:Name="DashFromPicker"/>
-            <TextBlock Text="Até" VerticalAlignment="Center"/>
-            <DatePicker x:Name="DashToPicker"/>
-            <Button Content="Aplicar" Click="OnApplyDashFilters" IsEnabled="{Binding CanApply}"/>
-            <ProgressBar Width="140" Height="16" IsIndeterminate="True"
-                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
-        </StackPanel>
-
-        <!-- Cards de destaque -->
-        <UniformGrid Grid.Row="2" Columns="2" Margin="0,0,0,0">
-            <Border CornerRadius="10" Margin="0,0,12,0" Style="{StaticResource CardBorder}">
-                <StackPanel>
-                    <TextBlock Text="Receitas (mês)" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalReceitas}" FontSize="22"/>
+            <!-- 0. Menu (Simplified Strip) -->
+            <Border Grid.Row="0" Margin="0,0,0,20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,10">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Início" Click="OnGoDashboard" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                    <Button Content="Lançamentos" Click="OnGoTransactions" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                    <Button Content="Contas" Click="OnGoAccounts" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                    <Button Content="Categorias" Click="OnGoCategories" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                    <Button Content="Recorrentes" Click="OnGoRecurring" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                    <Button Content="Importar" Click="OnGoImport" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                    <Button Content="Configurações" Click="OnGoSettings" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}"/>
                 </StackPanel>
             </Border>
-            <Border CornerRadius="10" Style="{StaticResource CardBorder}">
-                <StackPanel>
-                    <TextBlock Text="Despesas (mês)" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalDespesas}" FontSize="22"/>
-                </StackPanel>
-            </Border>
-        </UniformGrid>
 
-        <!-- Linha 2: comparação -->
-        <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,16,0,0">
-            <TextBlock Text="Receitas vs Despesas" Style="{StaticResource SectionHeaderText}"/>
-            <Border CornerRadius="10" Margin="0,4,0,0" Style="{StaticResource CardBorder}">
-                <lvc:CartesianChart Series="{Binding ComparisonSeries}" YAxes="{Binding ComparisonYAxis}" Height="360"/>
-            </Border>
-        </StackPanel>
-
-        <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <GroupBox Header="Despesas por Categoria (mês)">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <ListView ItemsSource="{Binding DespesasPorCategoria}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="Categoria" DisplayMemberBinding="{Binding Name}" Width="180"/>
-                                <GridViewColumn Header="Total" DisplayMemberBinding="{Binding Total}" Width="120"/>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                    <Border Grid.Column="1" Margin="12,0,0,0" CornerRadius="10" Style="{StaticResource CardBorder}">
-                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Right" MinHeight="220"/>
+            <!-- 1. Header + Actions -->
+            <Grid Grid.Row="1" Margin="0,0,0,30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Title & Filter -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Visão Geral" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,30,0" VerticalAlignment="Center"/>
+                    
+                    <Border Background="White" CornerRadius="8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10,5">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Período:" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,5,0"/>
+                            <DatePicker x:Name="DashFromPicker" BorderThickness="0"/>
+                            <TextBlock Text="até" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <DatePicker x:Name="DashToPicker" BorderThickness="0"/>
+                            <Button Content="Filtrar" Click="OnApplyDashFilters" Margin="10,0,0,0" Height="30" Padding="15,0"/>
+                            <ProgressBar Width="20" Height="20" IsIndeterminate="True" Margin="10,0,0,0" 
+                                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
                     </Border>
-                </Grid>
-            </GroupBox>
-
-            <GroupBox Grid.Column="1" Header="Saldos por Conta">
-                <DataGrid ItemsSource="{Binding AccountBalances}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" CanUserDeleteRows="False"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Conta" Binding="{Binding AccountName}" Width="*"/>
-                        <DataGridTextColumn Header="Saldo" Binding="{Binding Balance}" Width="160"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
-        </Grid>
-
-        <Grid Grid.Row="5" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <GroupBox Header="Últimos Lançamentos">
-                <DataGrid ItemsSource="{Binding RecentTransactions}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" CanUserDeleteRows="False"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Data" Binding="{Binding Data, StringFormat=d}" Width="100"/>
-                        <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
-                        <DataGridTextColumn Header="Valor" Binding="{Binding Valor}" Width="120"/>
-                        <DataGridTextColumn Header="Conta" Binding="{Binding AccountName}" Width="*"/>
-                        <DataGridTextColumn Header="Categoria" Binding="{Binding CategoryName}" Width="200"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
-            <GroupBox Grid.Column="1" Header="Metas do mês">
-                <DataGrid ItemsSource="{Binding GoalsProgress}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" CanUserDeleteRows="False"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Categoria" Binding="{Binding CategoryName}" Width="*"/>
-                        <DataGridTextColumn Header="Limite" Binding="{Binding Limit}" Width="120"/>
-                        <DataGridTextColumn Header="Gasto" Binding="{Binding Spent}" Width="120"/>
-                        <DataGridTextColumn Header="% Usado" Binding="{Binding Percent, StringFormat=P0}" Width="120"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
-        </Grid>
-
-        <GroupBox Grid.Row="6" Header="Patrimônio Líquido" Margin="0,16,0,0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Grid.Row="0">
-                    <TextBlock Text="Período:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ComboBox x:Name="NetWorthPeriodCombo" Width="80" SelectedIndex="1" SelectionChanged="OnNetWorthPeriodChanged">
-                        <ComboBoxItem Content="6"/>
-                        <ComboBoxItem Content="12"/>
-                        <ComboBoxItem Content="24"/>
-                    </ComboBox>
                 </StackPanel>
-                <Border Style="{StaticResource CardBorder}" Grid.Row="1">
-                    <lvc:CartesianChart Series="{Binding NetWorthSeries}" XAxes="{Binding NetWorthXAxis}" MinHeight="220"/>
+
+                <!-- Actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="+ Nova Transação" Click="OnGoTransactions" Margin="0,0,10,0" Height="40" Background="{StaticResource PrimaryBrush}"/>
+                    <Button Content="Exportar Relatório" Command="{Binding ExportReportCommand}" Height="40" Background="Transparent" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Foreground="{StaticResource TextPrimaryBrush}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- 2. KPIs -->
+            <Grid Grid.Row="2" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Income -->
+                <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Text="Receitas" Style="{StaticResource KpiLabelStyle}"/>
+                            <TextBlock Text="{Binding TotalReceitas, StringFormat=C}" Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource SuccessBrush}"/>
+                        </StackPanel>
+                        <materialDesign:PackIcon Kind="ArrowUpCircle" Width="32" Height="32" Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2"/>
+                    </Grid>
+                </Border>
+
+                <!-- Expense -->
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Text="Despesas" Style="{StaticResource KpiLabelStyle}"/>
+                            <TextBlock Text="{Binding TotalDespesas, StringFormat=C}" Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource DangerBrush}"/>
+                        </StackPanel>
+                        <materialDesign:PackIcon Kind="ArrowDownCircle" Width="32" Height="32" Foreground="{StaticResource DangerBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2"/>
+                    </Grid>
+                </Border>
+
+                <!-- Balance -->
+                <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Text="Saldo do Período" Style="{StaticResource KpiLabelStyle}"/>
+                            <TextBlock Text="{Binding TotalSaldo, StringFormat=C}" Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource PrimaryBrush}"/>
+                        </StackPanel>
+                        <materialDesign:PackIcon Kind="ScaleBalance" Width="32" Height="32" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2"/>
+                    </Grid>
                 </Border>
             </Grid>
-        </GroupBox>
-    </Grid>
+
+            <!-- 3. Charts Row -->
+            <Grid Grid.Row="3" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Bar Chart -->
+                <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Comparativo de Fluxo" Style="{StaticResource HeaderTextStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding ComparisonSeries}" YAxes="{Binding ComparisonYAxis}" Margin="0,10,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- Pie Chart -->
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Despesas por Categoria" Style="{StaticResource HeaderTextStyle}"/>
+                        <lvc:PieChart Grid.Row="1" Series="{Binding PieSeries}" LegendPosition="Bottom" Margin="0,10,0,0"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 4. Lists Row -->
+            <Grid Grid.Row="4" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Account Balances -->
+                <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Saldos por Conta" Style="{StaticResource HeaderTextStyle}"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding AccountBalances}" AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" IsReadOnly="True" GridLinesVisibility="Horizontal" 
+                                  HeadersVisibility="Column" Background="White" BorderThickness="0"
+                                  RowHeight="35" ColumnHeaderHeight="40">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                    <Setter Property="Padding" Value="10,0"/>
+                                </Style>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="10,0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="DataGridCell">
+                                                <Border Padding="{TemplateBinding Padding}" Background="Transparent">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Conta" Binding="{Binding AccountName}" Width="*"/>
+                                <DataGridTextColumn Header="Saldo" Binding="{Binding Balance, StringFormat=C}" Width="Auto" FontWeight="Bold"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- Goals -->
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Metas do Mês" Style="{StaticResource HeaderTextStyle}"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding GoalsProgress}" AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" IsReadOnly="True" GridLinesVisibility="Horizontal" 
+                                  HeadersVisibility="Column" Background="White" BorderThickness="0"
+                                  RowHeight="35" ColumnHeaderHeight="40">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                    <Setter Property="Padding" Value="10,0"/>
+                                </Style>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="10,0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="DataGridCell">
+                                                <Border Padding="{TemplateBinding Padding}" Background="Transparent">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Categoria" Binding="{Binding CategoryName}" Width="*"/>
+                                <DataGridTextColumn Header="Gasto / Limite" Binding="{Binding Spent, StringFormat=C}" Width="Auto"/>
+                                <DataGridTemplateColumn Header="Progresso" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ProgressBar Value="{Binding Percent, Mode=OneWay}" Maximum="1" Height="6" 
+                                                         Foreground="{StaticResource PrimaryBrush}" Background="#F0F0F0" BorderThickness="0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="%" Binding="{Binding Percent, StringFormat=P0}" Width="50"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 5. Net Worth Chart -->
+            <Border Grid.Row="5" Style="{StaticResource CardStyle}" Margin="0,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="300"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Grid Grid.Row="0">
+                        <TextBlock Text="Evolução do Patrimônio" Style="{StaticResource HeaderTextStyle}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="Período:" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <ComboBox x:Name="NetWorthPeriodCombo" Width="100" SelectedIndex="1" SelectionChanged="OnNetWorthPeriodChanged" Padding="5">
+                                <ComboBoxItem Content="6"/>
+                                <ComboBoxItem Content="12"/>
+                                <ComboBoxItem Content="24"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+
+                    <lvc:CartesianChart Grid.Row="1" Series="{Binding NetWorthSeries}" XAxes="{Binding NetWorthXAxis}" Margin="0,10,0,0"/>
+                </Grid>
+            </Border>
+
+        </Grid>
     </ScrollViewer>
 </Window>
