@@ -167,11 +167,23 @@ public sealed partial class DashboardViewModel : ObservableObject
         var baseMonth = new DateTime((FilterFrom ?? firstDay).Year, (FilterFrom ?? firstDay).Month, 1);
         var goals = await db.Goals.Where(g => g.Ano == baseMonth.Year && g.Mes == baseMonth.Month).ToListAsync();
         var goalsVm = new List<GoalProgressItem>();
-        foreach (var g in goals)
+        if (goals.Count > 0)
         {
-            var spent = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId == g.CategoryId).Sum(t => t.Valor);
-            var name = categories.TryGetValue(g.CategoryId, out var cat) ? cat.Nome : $"Cat {g.CategoryId}";
-            goalsVm.Add(new GoalProgressItem { CategoryName = name, Limit = g.LimiteMensal, Spent = spent });
+            foreach (var g in goals)
+            {
+                var spent = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId == g.CategoryId).Sum(t => t.Valor);
+                var name = categories.TryGetValue(g.CategoryId, out var cat) ? cat.Nome : $"Cat {g.CategoryId}";
+                goalsVm.Add(new GoalProgressItem { CategoryName = name, Limit = g.LimiteMensal, Spent = spent });
+            }
+        }
+        else
+        {
+            var catLimits = await db.Categories.Where(c => c.LimiteMensal != null && c.LimiteMensal > 0).ToListAsync();
+            foreach (var c in catLimits)
+            {
+                var spent = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId == c.Id).Sum(t => t.Valor);
+                goalsVm.Add(new GoalProgressItem { CategoryName = c.Nome, Limit = c.LimiteMensal!.Value, Spent = spent });
+            }
         }
         GoalsProgress = new ObservableCollection<GoalProgressItem>(goalsVm.OrderByDescending(x => x.Percent));
     }
@@ -199,8 +211,35 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public void UpdateNetWorthSeries(int months)
     {
-        if (_reportService is null) return;
-        var points = _reportService.GetNetWorthHistory(months);
+        List<ReportService.NetWorthPoint> points;
+        if (_reportService is not null)
+        {
+            points = _reportService.GetNetWorthHistory(months);
+        }
+        else
+        {
+            using var db = new CoinCraftDbContext();
+            var endDate = DateTime.Today;
+            var lastMonthEnd = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+            var accounts = db.Accounts.AsNoTracking().ToList();
+            points = new List<ReportService.NetWorthPoint>();
+            for (int i = months - 1; i >= 0; i--)
+            {
+                var periodEnd = lastMonthEnd.AddMonths(-i);
+                var txs = db.Transactions.AsNoTracking().Where(t => t.Data <= periodEnd).ToList();
+                decimal netWorth = 0m;
+                foreach (var acc in accounts)
+                {
+                    var receitas = txs.Where(t => t.Tipo == TransactionType.Receita && t.AccountId == acc.Id).Sum(t => t.Valor);
+                    var despesas = txs.Where(t => t.Tipo == TransactionType.Despesa && t.AccountId == acc.Id).Sum(t => t.Valor);
+                    var transfOut = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.AccountId == acc.Id).Sum(t => t.Valor);
+                    var transfIn = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.OpostoAccountId == acc.Id).Sum(t => t.Valor);
+                    var saldo = acc.SaldoInicial + receitas - despesas - transfOut + transfIn;
+                    netWorth += saldo;
+                }
+                points.Add(new ReportService.NetWorthPoint { Year = periodEnd.Year, Month = periodEnd.Month, NetWorth = netWorth });
+            }
+        }
         if (points is null || points.Count == 0)
         {
             NetWorthSeries = Array.Empty<ISeries>();

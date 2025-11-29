@@ -1,7 +1,7 @@
 <Window x:Class="CoinCraft.App.Views.TransactionsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Lançamentos" Height="560" Width="980" WindowStartupLocation="CenterOwner">
+        Title="Lançamentos" MinWidth="900" MinHeight="600" WindowStartupLocation="CenterOwner">
     <DockPanel>
         <ToolBar DockPanel.Dock="Top">
             <Button Content="Adicionar" Click="OnAddClick" Margin="0,0,8,0"/>
@@ -40,6 +40,8 @@
                       IsReadOnly="True"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       SelectionMode="Single">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Data" Binding="{Binding Data, StringFormat=d}" Width="120"/>
@@ -47,7 +49,7 @@
                     <DataGridTextColumn Header="Valor" Binding="{Binding Valor}" Width="120"/>
                     <DataGridTextColumn Header="Conta" Binding="{Binding AccountName}" Width="*"/>
                     <DataGridTextColumn Header="Categoria" Binding="{Binding CategoryName}" Width="200"/>
-                    <DataGridTextColumn Header="Descrição" Binding="{Binding Descricao}" Width="260"/>
+                    <DataGridTextColumn Header="Descrição" Binding="{Binding Descricao}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

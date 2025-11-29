@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Contas" Height="520" Width="880" WindowStartupLocation="CenterOwner">
+        Title="Contas" MinWidth="900" MinHeight="600" WindowStartupLocation="CenterOwner">
     <DockPanel LastChildFill="True">
         <ToolBar DockPanel.Dock="Top">
             <Button Content="Adicionar" Click="OnAddClick" Margin="0,0,8,0"/>
@@ -25,14 +25,16 @@
                       IsReadOnly="True"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       SelectionMode="Single">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Nome" Binding="{Binding Nome}" Width="*"/>
-                    <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="140"/>
-                    <DataGridTextColumn Header="Saldo Inicial" Binding="{Binding SaldoInicial}" Width="140"/>
-                    <DataGridCheckBoxColumn Header="Ativa" Binding="{Binding Ativa}" Width="80"/>
-                    <DataGridTextColumn Header="Cor" Binding="{Binding CorHex}" Width="120"/>
-                    <DataGridTextColumn Header="Ícone" Binding="{Binding Icone}" Width="120"/>
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="160"/>
+                    <DataGridTextColumn Header="Saldo Inicial" Binding="{Binding SaldoInicial}" Width="160"/>
+                    <DataGridCheckBoxColumn Header="Ativa" Binding="{Binding Ativa}" Width="100"/>
+                    <DataGridTextColumn Header="Cor" Binding="{Binding CorHex}" Width="160"/>
+                    <DataGridTextColumn Header="Ícone" Binding="{Binding Icone}" Width="160"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
