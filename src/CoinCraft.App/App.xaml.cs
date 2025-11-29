@@ -536,7 +536,10 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
     {
         try
         {
-            var licWin = new CoinCraft.App.Views.LicenseWindow(licensing) { Owner = Application.Current.MainWindow };
+            var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
+            var owner = Application.Current.MainWindow;
+            if (owner != null && !ReferenceEquals(owner, licWin))
+                licWin.Owner = owner;
             var ok = licWin.ShowDialog();
             var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
             if (activated)
