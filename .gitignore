@@ -1,58 +1,9 @@
-# .NET / Visual Studio
 **/bin/
 **/obj/
-.vs/
-*.user
-*.suo
-*.userosscache
-*.sln.iml
-
-# Build artifacts
-*.exe
-*.dll
-*.pdb
-
-# Logs and local databases
-*.log
-*.db
-coincraft.db
-coincraft.log
-
-# OS-specific
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Tools
-.DS_Store
-.idea/
-.vscode/
-
-# NuGet
-**/packages/
-*.nupkg
-
-# Rider/Resharper caches
-_ReSharper.Caches/
-# Build outputs and local distribution (do not version)
-/CoinCraft-win-*/
-/*.msix
-/*.zip
-dist/**/*.msix
-dist/**/*.msixbundle
-src/CoinCraft.Package/AppPackages/
-dist/PackageStage/
-
-# Distribution archives generated locally (attach via GitHub Releases)
-dist/**/*.zip
-
-# Private signing key (never commit)
-CoinCraft_dev_private.pfx
-scripts/certs/*.pfx
-
-# MSBuild logs
-*.binlog
-msbuild_*.txt
-
-# VS/WAP cache
-*.assets.cache
+**/publish/
+**/admin_publish/
+**/publish-keygen/
+/installer/Output/
+/*.user
+/*.suo
+/.vs/

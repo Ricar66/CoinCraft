@@ -65,7 +65,7 @@ namespace CoinCraft.App.ViewModels
             var result = await _licensingService.EnsureLicensedAsync(() => Task.FromResult<string?>(LicenseKey));
             if (result.IsValid)
             {
-                MessageBox.Show("Licença ativada com sucesso! O aplicativo será reiniciado.", "Sucesso");
+                MessageBox.Show("Licença ativada com sucesso! Reiniciando o aplicativo...", "Sucesso");
                 foreach (Window window in Application.Current.Windows)
                 {
                     if (window is Views.LicenseWindow)
@@ -74,6 +74,17 @@ namespace CoinCraft.App.ViewModels
                         window.Close();
                     }
                 }
+                try
+                {
+                    var exe = System.Environment.ProcessPath;
+                    if (!string.IsNullOrEmpty(exe))
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+                        System.Windows.Application.Current.Shutdown();
+                        return;
+                    }
+                }
+                catch { }
                 CurrentStatus = _licensingService.CurrentState.ToString();
                 RemainingInstalls = _licensingService.CurrentLicense?.RemainingInstallations.ToString() ?? "-";
             }

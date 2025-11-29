@@ -178,7 +178,14 @@ namespace CoinCraft.Services.Licensing
 
         private static bool AllowOffline()
         {
-            return string.Equals(Environment.GetEnvironmentVariable("COINCRAFT_ALLOW_OFFLINE"), "1", StringComparison.OrdinalIgnoreCase);
+            var allowEnv = string.Equals(Environment.GetEnvironmentVariable("COINCRAFT_ALLOW_OFFLINE"), "1", StringComparison.OrdinalIgnoreCase);
+            var baseDir = AppContext.BaseDirectory;
+            var xmlPathEnv = Environment.GetEnvironmentVariable("COINCRAFT_PUBLICKEY_XML_PATH");
+            var pemPathEnv = Environment.GetEnvironmentVariable("COINCRAFT_PUBLICKEY_PEM_PATH");
+            var xmlPath = string.IsNullOrWhiteSpace(xmlPathEnv) ? Path.Combine(baseDir, "public.xml") : xmlPathEnv!;
+            var pemPath = string.IsNullOrWhiteSpace(pemPathEnv) ? Path.Combine(baseDir, "public.pem") : pemPathEnv!;
+            var hasPublicKeyFile = File.Exists(xmlPath) || File.Exists(pemPath);
+            return allowEnv || hasPublicKeyFile;
         }
 
         private bool TryVerifyOffline(string licenseKey)
