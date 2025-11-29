@@ -21,7 +21,7 @@ DisableProgramGroupPage=yes
 ; Remove a mensagem "O instalador já está rodando" se for atualização silenciosa
 SetupMutex=CoinCraftSetupMutex
 ; Local onde o instalador final será salvo (pasta Output na raiz ou onde você preferir)
-OutputDir=..\installer\OutputLatest
+OutputDir=..\installer\Output
 OutputBaseFilename=InstalarCoinCraft
 Compression=lzma
 SolidCompression=yes
