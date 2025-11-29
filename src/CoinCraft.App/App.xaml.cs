@@ -21,6 +21,7 @@ public partial class App : Application
     private static Mutex? _singleInstanceMutex;
     protected override void OnStartup(StartupEventArgs e)
     {
+        this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
             _singleInstanceMutex = new Mutex(true, "CoinCraft.App.Singleton", out bool createdNew);
@@ -411,7 +412,7 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         // Tratar exceções não capturadas para evitar fechamento abrupto
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        // ShutdownMode já definido manualmente na primeira linha
 
         // Licenciamento temporariamente desativado: não bloquear startup por licença
         // (Reativar removendo este bloco comentado e a mensagem de log abaixo)
@@ -478,23 +479,15 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
             logDi.Error($"Falha ao inicializar DI: {exDi.Message}");
         }
 
-        var devMode = string.Equals(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase) || Debugger.IsAttached;
         var licensing = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicensingService>();
-        if (!devMode)
+        var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
+        if (validRes.IsValid)
         {
-            var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
-            if (validRes.IsValid)
-            {
-                OpenDashboard();
-            }
-            else
-            {
-                OpenLicenseWindow(licensing);
-            }
+            OpenDashboard();
         }
         else
         {
-            OpenDashboard();
+            OpenLicenseWindow(licensing);
         }
 
         // Aplicar tema e tela inicial conforme configurações do usuário
@@ -527,9 +520,9 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
     {
         var dashboard = new CoinCraft.App.Views.DashboardWindow();
         Application.Current.MainWindow = dashboard;
-        Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
         dashboard.Show();
         dashboard.Activate();
+        Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
     }
 
     private void OpenLicenseWindow(CoinCraft.Services.Licensing.ILicensingService licensing)
