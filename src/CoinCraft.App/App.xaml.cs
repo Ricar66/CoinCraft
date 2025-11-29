@@ -458,7 +458,7 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
             sc.AddSingleton<CoinCraft.Services.Licensing.ILicenseApiClient>(sp =>
                 new CoinCraft.Services.Licensing.LicenseApiClient(
                     sp.GetRequiredService<HttpClient>(),
-                    "https://licensing.example.com")); // TODO: mover para configuração
+                    "https://codecraftgenz.com.br/"));
             sc.AddSingleton<CoinCraft.Services.Licensing.ILicensingService, CoinCraft.Services.Licensing.LicensingService>();
 
             // ViewModels
@@ -483,12 +483,37 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         var validRes = await licensing.ValidateExistingAsync();
         if (!validRes.IsValid)
         {
-            var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
-            var owner = Application.Current.MainWindow;
-            if (owner != null && !ReferenceEquals(owner, licWin)) licWin.Owner = owner;
-            var ok = licWin.ShowDialog();
-            var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
-            if (!activated)
+            // Fluxo de ativação: Escolha de método
+            var httpClient = Services!.GetRequiredService<HttpClient>();
+            var activationVm = new CoinCraft.App.ViewModels.ActivationMethodViewModel(licensing, httpClient);
+            var activationWin = new CoinCraft.App.Views.ActivationMethodWindow(activationVm);
+            
+            var actResult = activationWin.ShowDialog();
+
+            // 1. Se ativou via email (DialogResult=true) e estado Active
+            if (actResult == true && licensing.CurrentState == LicenseState.Active)
+            {
+                // Segue o fluxo normal para abrir Dashboard
+            }
+            // 2. Se usuário pediu modo Offline (Tag="Offline")
+            else if (activationWin.Tag?.ToString() == "Offline")
+            {
+                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
+                var owner = Application.Current.MainWindow;
+                // Define owner apenas se houver alguma janela principal visível que não seja ela mesma
+                if (owner != null && !ReferenceEquals(owner, licWin) && owner.IsVisible) 
+                    licWin.Owner = owner;
+                
+                var ok = licWin.ShowDialog();
+                var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
+                if (!activated)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
+            // 3. Cancelou ou fechou
+            else
             {
                 Shutdown();
                 return;
