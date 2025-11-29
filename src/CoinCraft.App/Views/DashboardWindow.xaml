@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Dashboard - CoinCraft" MinWidth="1024" MinHeight="768" WindowStartupLocation="CenterOwner"
         Background="#F5F5F7" Foreground="#333333">
 
@@ -163,7 +162,9 @@
                             <TextBlock Text="Receitas" Style="{StaticResource KpiLabelStyle}"/>
                             <TextBlock Text="{Binding TotalReceitas, StringFormat=C}" Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource SuccessBrush}"/>
                         </StackPanel>
-                        <materialDesign:PackIcon Kind="ArrowUpCircle" Width="32" Height="32" Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2"/>
+                        <Viewbox Width="32" Height="32" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2">
+                            <Path Fill="{StaticResource SuccessBrush}" Data="M12,2C17.52,2 22,6.48 22,12C22,17.52 17.52,22 12,22C6.48,22 2,17.52 2,12C2,6.48 6.48,2 12,2M12,20C16.41,20 20,16.41 20,12C20,7.59 16.41,4 12,4C7.59,4 4,7.59 4,12C4,16.41 7.59,20 12,20M11,7H13V13H16.2L12,17.2L7.8,13H11V7Z" />
+                        </Viewbox>
                     </Grid>
                 </Border>
 
@@ -174,7 +175,9 @@
                             <TextBlock Text="Despesas" Style="{StaticResource KpiLabelStyle}"/>
                             <TextBlock Text="{Binding TotalDespesas, StringFormat=C}" Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource DangerBrush}"/>
                         </StackPanel>
-                        <materialDesign:PackIcon Kind="ArrowDownCircle" Width="32" Height="32" Foreground="{StaticResource DangerBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2"/>
+                        <Viewbox Width="32" Height="32" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2">
+                            <Path Fill="{StaticResource DangerBrush}" Data="M12,2C17.52,2 22,6.48 22,12C22,17.52 17.52,22 12,22C6.48,22 2,17.52 2,12C2,6.48 6.48,2 12,2M12,20C16.41,20 20,16.41 20,12C20,7.59 16.41,4 12,4C7.59,4 4,7.59 4,12C4,16.41 7.59,20 12,20M11,17H13V11H16.2L12,6.8L7.8,11H11V17Z" />
+                        </Viewbox>
                     </Grid>
                 </Border>
 
@@ -185,7 +188,9 @@
                             <TextBlock Text="Saldo do Período" Style="{StaticResource KpiLabelStyle}"/>
                             <TextBlock Text="{Binding TotalSaldo, StringFormat=C}" Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource PrimaryBrush}"/>
                         </StackPanel>
-                        <materialDesign:PackIcon Kind="ScaleBalance" Width="32" Height="32" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2"/>
+                        <Viewbox Width="32" Height="32" HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.2">
+                            <Path Fill="{StaticResource PrimaryBrush}" Data="M5,6H23V18H5V6M5,4C3.9,4 3,4.9 3,6V18C3,19.1 3.9,20 5,20H23C24.1,20 25,19.1 25,18V6C25,4.9 24.1,4 23,4H5Z" />
+                        </Viewbox>
                     </Grid>
                 </Border>
             </Grid>
