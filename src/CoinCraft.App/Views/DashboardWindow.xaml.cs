@@ -23,7 +23,6 @@ public partial class DashboardWindow : Window
     private readonly DashboardViewModel _vm = App.Services!.GetRequiredService<DashboardViewModel>();
     private PieChart? _pieChart;
     private CartesianChart? _netWorthChart;
-    private CartesianChart? _comparisonChart;
     public DashboardWindow()
     {
         InitializeComponent();
@@ -142,8 +141,10 @@ public partial class DashboardWindow : Window
         bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(despesas, GridUnitType.Star) });
 
         // Cores equivalentes ao visual do screenshot
-        var greenBrush = (SolidColorBrush)new BrushConverter().ConvertFromString("#66C37A");
-        var redBrush = (SolidColorBrush)new BrushConverter().ConvertFromString("#E57373");
+        var greenObj = new BrushConverter().ConvertFromString("#66C37A");
+        var redObj = new BrushConverter().ConvertFromString("#E57373");
+        var greenBrush = greenObj as SolidColorBrush ?? Brushes.Green;
+        var redBrush = redObj as SolidColorBrush ?? Brushes.Red;
         var green = new Border { Background = greenBrush, Height = barHeight };
         var red = new Border { Background = redBrush, Height = barHeight };
         Grid.SetColumn(green, 0);

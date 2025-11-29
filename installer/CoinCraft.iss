@@ -8,7 +8,7 @@
 
 [Setup]
 ; Este GUID deve ser único para o seu app. Se quiser gerar um novo, use o menu Tools -> Generate GUID do Inno Setup
-AppId={{E8A5E397-3335-4924-8173-13206228E4E5}
+AppId={{E8A5E397-3335-4924-8173-13206228E4E5}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}

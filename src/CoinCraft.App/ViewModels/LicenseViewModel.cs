@@ -61,6 +61,7 @@ namespace CoinCraft.App.ViewModels
                 StatusMessage = "Por favor, cole a licença gerada no site.";
                 return;
             }
+            LicenseKey = LicenseKey.Trim();
 
             var result = await _licensingService.EnsureLicensedAsync(() => Task.FromResult<string?>(LicenseKey));
             if (result.IsValid)

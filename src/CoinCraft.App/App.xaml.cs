@@ -398,6 +398,8 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         // Tratar exceções não capturadas para evitar fechamento abrupto
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
+        Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         // Licenciamento temporariamente desativado: não bloquear startup por licença
         // (Reativar removendo este bloco comentado e a mensagem de log abaixo)
         // var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
@@ -498,6 +500,8 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
 
         // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
         var main = new MainWindow();
+        Application.Current.MainWindow = main;
+        Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
         main.Show();
 
         // Aplicar tema e tela inicial conforme configurações do usuário
