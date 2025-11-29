@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace CoinCraft.Services.Licensing
 {
@@ -77,6 +78,12 @@ namespace CoinCraft.Services.Licensing
                     StartPeriodicValidation();
                     return r;
                 }
+                else if (AllowOffline() && TryVerifyOffline(existing.LicenseKey))
+                {
+                    UpdateState(r.License, true);
+                    StartPeriodicValidation();
+                    return new LicenseValidationResult { IsValid = true, License = r.License, Message = "Offline valid" };
+                }
             }
 
             // Ask user/app for license key
@@ -85,7 +92,23 @@ namespace CoinCraft.Services.Licensing
                 return new LicenseValidationResult { IsValid = false, Message = "Nenhuma licença fornecida" };
 
             var result = await _apiClient.ValidateLicenseAsync(key!, _fingerprint);
-            if (!result.IsValid) { UpdateState(result.License, false); return result; }
+            if (!result.IsValid)
+            {
+                if (AllowOffline() && TryVerifyOffline(key!))
+                {
+                    LicensingStorage.Save(new InstallationRecord
+                    {
+                        LicenseKey = key!,
+                        MachineFingerprint = _fingerprint,
+                        InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O")
+                    });
+                    UpdateState(result.License, true);
+                    StartPeriodicValidation();
+                    return new LicenseValidationResult { IsValid = true, License = result.License, Message = "Offline valid" };
+                }
+                UpdateState(result.License, false);
+                return result;
+            }
 
             // Register installation and persist locally
             var ok = await _apiClient.RegisterInstallationAsync(key!, _fingerprint);
@@ -112,6 +135,11 @@ namespace CoinCraft.Services.Licensing
 
             var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint);
             UpdateState(r.License, r.IsValid);
+            if (!r.IsValid && AllowOffline() && TryVerifyOffline(existing.LicenseKey))
+            {
+                UpdateState(r.License, true);
+                return new LicenseValidationResult { IsValid = true, License = r.License, Message = "Offline valid" };
+            }
             return r;
         }
 
@@ -146,6 +174,51 @@ namespace CoinCraft.Services.Licensing
                 }
             }
             catch { /* swallow to avoid crashing */ }
+        }
+
+        private static bool AllowOffline()
+        {
+            return string.Equals(Environment.GetEnvironmentVariable("COINCRAFT_ALLOW_OFFLINE"), "1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool TryVerifyOffline(string licenseKey)
+        {
+            try
+            {
+                var baseDir = AppContext.BaseDirectory;
+                var xmlPathEnv = Environment.GetEnvironmentVariable("COINCRAFT_PUBLICKEY_XML_PATH");
+                var pemPathEnv = Environment.GetEnvironmentVariable("COINCRAFT_PUBLICKEY_PEM_PATH");
+                var xmlPath = string.IsNullOrWhiteSpace(xmlPathEnv) ? Path.Combine(baseDir, "public.xml") : xmlPathEnv!;
+                var pemPath = string.IsNullOrWhiteSpace(pemPathEnv) ? Path.Combine(baseDir, "public.pem") : pemPathEnv!;
+                string? keyText = null;
+                if (File.Exists(xmlPath)) keyText = File.ReadAllText(xmlPath);
+                else if (File.Exists(pemPath)) keyText = File.ReadAllText(pemPath);
+                if (string.IsNullOrWhiteSpace(keyText)) return false;
+                var sig = Convert.FromBase64String(licenseKey);
+                var data = Encoding.UTF8.GetBytes(_fingerprint);
+                if (keyText.Contains("<RSAKeyValue>"))
+                {
+                    using var rsa = new RSACryptoServiceProvider();
+                    rsa.FromXmlString(keyText);
+                    return rsa.VerifyData(data, sig, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                }
+                else
+                {
+                    try
+                    {
+                        using var ecdsa = ECDsa.Create();
+                        ecdsa.ImportFromPem(keyText);
+                        return ecdsa.VerifyData(data, sig, HashAlgorithmName.SHA256);
+                    }
+                    catch
+                    {
+                        using var rsa = RSA.Create();
+                        rsa.ImportFromPem(keyText);
+                        return rsa.VerifyData(data, sig, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    }
+                }
+            }
+            catch { return false; }
         }
 
         public void Dispose()
