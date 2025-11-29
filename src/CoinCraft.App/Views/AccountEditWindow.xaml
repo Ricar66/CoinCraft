@@ -34,8 +34,22 @@
             <TextBlock Text="Ativa" Grid.Row="3" VerticalAlignment="Center"/>
             <CheckBox x:Name="AtivaCheck" Grid.Row="3" Grid.Column="1" Margin="8,0,0,8"/>
 
-            <TextBlock Text="Cor (hex)" Grid.Row="4" VerticalAlignment="Center"/>
-            <TextBox x:Name="CorBox" Grid.Row="4" Grid.Column="1" Margin="8,0,0,8"/>
+            <TextBlock Text="Cor" Grid.Row="4" VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="4" Grid.Column="1" Margin="8,0,0,8">
+                <TextBox x:Name="CorBox" Margin="0,0,0,8"/>
+                <ListBox ItemsSource="{Binding AvailableColors}" SelectionChanged="OnColorSelected" BorderThickness="0">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Ellipse Width="24" Height="24" Margin="4" Fill="{Binding}" StrokeThickness="1" Stroke="#DDDDDD"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
 
             <TextBlock Text="Ícone" Grid.Row="5" VerticalAlignment="Center"/>
             <TextBox x:Name="IconeBox" Grid.Row="5" Grid.Column="1" Margin="8,0,0,8"/>

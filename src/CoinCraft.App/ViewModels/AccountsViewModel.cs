@@ -12,6 +12,11 @@ namespace CoinCraft.App.ViewModels;
 public sealed class AccountsViewModel : ObservableObject
 {
     private readonly LogService _log;
+    public ObservableCollection<string> AvailableColors { get; } = new()
+    {
+        "#4CAF50", "#FFC107", "#FF7043", "#42A5F5", "#66BB6A",
+        "#AB47BC", "#EC407A", "#26C6DA", "#8D6E63", "#78909C"
+    };
     private string? _statusMessage;
     public string? StatusMessage
     {

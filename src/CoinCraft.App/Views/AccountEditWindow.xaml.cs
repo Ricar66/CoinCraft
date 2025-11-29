@@ -13,6 +13,7 @@ public partial class AccountEditWindow : Window
     {
         InitializeComponent();
         _account = account;
+        DataContext = new CoinCraft.App.ViewModels.AccountsViewModel(new CoinCraft.Services.LogService());
 
         // Bind enum values
         TipoCombo.ItemsSource = Enum.GetValues(typeof(AccountType));
@@ -24,6 +25,16 @@ public partial class AccountEditWindow : Window
         AtivaCheck.IsChecked = _account.Ativa;
         CorBox.Text = _account.CorHex ?? string.Empty;
         IconeBox.Text = _account.Icone ?? string.Empty;
+    }
+
+    private void OnColorSelected(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        var color = (sender as System.Windows.Controls.ListBox)?.SelectedItem as string;
+        if (!string.IsNullOrWhiteSpace(color))
+        {
+            _account.CorHex = color;
+            CorBox.Text = color;
+        }
     }
 
     private void OnSaveClick(object sender, RoutedEventArgs e)

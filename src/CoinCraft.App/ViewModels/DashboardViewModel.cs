@@ -12,6 +12,8 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using CoinCraft.Services;
+using Microsoft.Win32;
+using CommunityToolkit.Mvvm.Input;
 
 namespace CoinCraft.App.ViewModels;
 
@@ -22,9 +24,10 @@ public sealed class CategorySlice
     public string ColorHex { get; set; } = "#888888";
 }
 
-public sealed class DashboardViewModel : ObservableObject
-{
-    private readonly ReportService? _reportService;
+public sealed partial class DashboardViewModel : ObservableObject
+    {
+        private readonly ReportService? _reportService;
+        private readonly ExportService _exportService = new();
 
     public DashboardViewModel(ReportService? reportService = null)
     {
@@ -301,5 +304,20 @@ public sealed class DashboardViewModel : ObservableObject
             .ToListAsync();
 
         RecentTransactions = new ObservableCollection<TransactionItem>(recent);
+    }
+
+    [RelayCommand]
+    private void ExportReport()
+    {
+        var dlg = new SaveFileDialog
+        {
+            Title = "Exportar Relatório",
+            Filter = "CSV|*.csv",
+            FileName = $"relatorio_{DateTime.Now:yyyyMMdd_HHmm}.csv"
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            _exportService.ExportToCsv(RecentTransactions, dlg.FileName);
+        }
     }
 }

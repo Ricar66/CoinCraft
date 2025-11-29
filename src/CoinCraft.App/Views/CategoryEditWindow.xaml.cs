@@ -12,6 +12,7 @@ public partial class CategoryEditWindow : Window
     {
         InitializeComponent();
         _cat = cat;
+        DataContext = new CoinCraft.App.ViewModels.CategoriesViewModel(new CoinCraft.Services.LogService());
 
         using var db = new CoinCraftDbContext();
         var all = db.Categories.OrderBy(c => c.Nome).ToList();
@@ -22,6 +23,16 @@ public partial class CategoryEditWindow : Window
         IconeBox.Text = _cat.Icone ?? string.Empty;
         ParentCombo.SelectedValue = _cat.ParentCategoryId;
         LimiteBox.Text = _cat.LimiteMensal?.ToString() ?? string.Empty;
+    }
+
+    private void OnColorSelected(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        var color = (sender as System.Windows.Controls.ListBox)?.SelectedItem as string;
+        if (!string.IsNullOrWhiteSpace(color))
+        {
+            CorBox.Text = color;
+            _cat.CorHex = color;
+        }
     }
 
     private void OnSaveClick(object sender, RoutedEventArgs e)
