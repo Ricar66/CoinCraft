@@ -1,7 +1,7 @@
 ; Script gerado para o Inno Setup
 ; O nome do aplicativo é definido aqui
 #define MyAppName "CoinCraft"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "CodeCraftGenz"
 #define MyAppURL "https://www.codecraftgenz.com.br/"
 #define MyAppExeName "CoinCraft.App.exe"
@@ -22,7 +22,7 @@ DisableProgramGroupPage=yes
 SetupMutex=CoinCraftSetupMutex
 ; Local onde o instalador final será salvo (pasta Output na raiz ou onde você preferir)
 OutputDir=..\installer\Output
-OutputBaseFilename=InstalarCoinCraft_v2
+OutputBaseFilename=InstalarCoinCraft_v1.0.1
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

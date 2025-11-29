@@ -21,8 +21,6 @@ namespace CoinCraft.App.Views;
 public partial class DashboardWindow : Window
 {
     private readonly DashboardViewModel _vm = App.Services!.GetRequiredService<DashboardViewModel>();
-    private PieChart? _pieChart;
-    private CartesianChart? _netWorthChart;
     public DashboardWindow()
     {
         InitializeComponent();
@@ -45,9 +43,6 @@ public partial class DashboardWindow : Window
                 await _vm.LoadAsync();
                 await _vm.LoadRecentAsync();
                 _vm.UpdateNetWorthSeries(GetSelectedNetWorthMonths());
-                RenderPieChart();
-                RenderNetWorthChart();
-                RenderComparisonChart();
             }
             catch (Exception ex)
             {
@@ -78,7 +73,6 @@ public partial class DashboardWindow : Window
     private void OnNetWorthPeriodChanged(object sender, SelectionChangedEventArgs e)
     {
         _vm.UpdateNetWorthSeries(GetSelectedNetWorthMonths());
-        RenderNetWorthChart();
     }
 
     private async void OnApplyDashFilters(object sender, RoutedEventArgs e)
@@ -92,9 +86,6 @@ public partial class DashboardWindow : Window
             await _vm.LoadAsync();
             await _vm.LoadRecentAsync();
             _vm.UpdateNetWorthSeries(GetSelectedNetWorthMonths());
-            RenderPieChart();
-            RenderNetWorthChart();
-            RenderComparisonChart();
         }
         catch (Exception ex)
         {
@@ -104,30 +95,6 @@ public partial class DashboardWindow : Window
         {
             _vm.IsLoading = false;
         }
-    }
-
-    private void RenderPieChart()
-    {
-        if (PieHost is null) return;
-        _pieChart ??= new PieChart { LegendPosition = LegendPosition.Right };
-        _pieChart.Series = _vm.PieSeries?.ToList() ?? new System.Collections.Generic.List<ISeries>();
-        var vb = new Viewbox { Stretch = System.Windows.Media.Stretch.Uniform };
-        vb.SizeChanged += (s, e) => { _pieChart.Height = Math.Max(180, PieHost.ActualHeight - 20); };
-        vb.Child = _pieChart;
-        PieHost.Children.Clear();
-        PieHost.Children.Add(vb);
-    }
-
-    private void RenderNetWorthChart()
-    {
-        if (NetWorthHost is null) return;
-        _netWorthChart ??= new CartesianChart { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
-        _netWorthChart.Series = _vm.NetWorthSeries?.ToList() ?? new System.Collections.Generic.List<ISeries>();
-        _netWorthChart.XAxes = _vm.NetWorthXAxis ?? System.Array.Empty<LiveChartsCore.SkiaSharpView.Axis>();
-        var vb = new Viewbox { Stretch = System.Windows.Media.Stretch.Fill };
-        vb.Child = _netWorthChart;
-        NetWorthHost.Children.Clear();
-        NetWorthHost.Children.Add(vb);
     }
 
     private void OnGoDashboard(object sender, RoutedEventArgs e)

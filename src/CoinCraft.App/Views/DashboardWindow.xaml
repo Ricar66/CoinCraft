@@ -117,7 +117,7 @@
         <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,16,0,0">
             <TextBlock Text="Receitas vs Despesas" Style="{StaticResource SectionHeaderText}"/>
             <Border CornerRadius="10" Margin="0,4,0,0" Style="{StaticResource CardBorder}">
-                <lvc:CartesianChart Series="{Binding ComparisonSeries}" XAxes="{Binding ComparisonXAxis}" Height="360"/>
+                <lvc:CartesianChart Series="{Binding ComparisonSeries}" YAxes="{Binding ComparisonYAxis}" Height="360"/>
             </Border>
         </StackPanel>
 
@@ -142,7 +142,7 @@
                         </ListView.View>
                     </ListView>
                     <Border Grid.Column="1" Margin="12,0,0,0" CornerRadius="10" Style="{StaticResource CardBorder}">
-                        <Grid x:Name="PieHost" MinHeight="220"/>
+                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Right" MinHeight="220"/>
                     </Border>
                 </Grid>
             </GroupBox>
@@ -212,7 +212,7 @@
                     </ComboBox>
                 </StackPanel>
                 <Border Style="{StaticResource CardBorder}" Grid.Row="1">
-                    <Grid x:Name="NetWorthHost" MinHeight="220"/>
+                    <lvc:CartesianChart Series="{Binding NetWorthSeries}" XAxes="{Binding NetWorthXAxis}" MinHeight="220"/>
                 </Border>
             </Grid>
         </GroupBox>

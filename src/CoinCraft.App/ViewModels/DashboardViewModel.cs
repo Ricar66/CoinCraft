@@ -277,27 +277,27 @@ public sealed partial class DashboardViewModel : ObservableObject
         private set => SetProperty(ref _comparisonSeries, value);
     }
 
-    private Axis[] _comparisonXAxis = System.Array.Empty<Axis>();
-    public Axis[] ComparisonXAxis
+    private Axis[] _comparisonYAxis = System.Array.Empty<Axis>();
+    public Axis[] ComparisonYAxis
     {
-        get => _comparisonXAxis;
-        private set => SetProperty(ref _comparisonXAxis, value);
+        get => _comparisonYAxis;
+        private set => SetProperty(ref _comparisonYAxis, value);
     }
 
     private void UpdateComparisonSeries()
     {
         var values = new double[] { (double)TotalReceitas, (double)TotalDespesas };
-        // Séries compactas: barras separadas com cores distintas
+        // Séries horizontais (RowSeries)
         ComparisonSeries = new ISeries[]
         {
-            new ColumnSeries<double>
+            new RowSeries<double>
             {
                 Values = new double[]{ values[0] },
                 Name = "Receitas",
                 Fill = new SolidColorPaint(SKColors.LightGreen),
                 MaxBarWidth = 40
             },
-            new ColumnSeries<double>
+            new RowSeries<double>
             {
                 Values = new double[]{ values[1] },
                 Name = "Despesas",
@@ -305,7 +305,7 @@ public sealed partial class DashboardViewModel : ObservableObject
                 MaxBarWidth = 40
             }
         };
-        ComparisonXAxis = new[]
+        ComparisonYAxis = new[]
         {
             new Axis
             {
