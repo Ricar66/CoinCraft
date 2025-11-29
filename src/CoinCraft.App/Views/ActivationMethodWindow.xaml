@@ -88,7 +88,7 @@
                     <Border BorderBrush="#BDBDBD" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12" Background="White">
                         <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Padding="10" FontSize="14" BorderThickness="0" Background="Transparent"/>
                     </Border>
-                    <Button Content="Validar Compra Online" Command="{Binding ValidateEmailCommand}" Style="{StaticResource PrimaryButton}">
+                    <Button Content="Ativar Online" Command="{Binding ValidateEmailCommand}" Style="{StaticResource PrimaryButton}">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                                 <Style.Triggers>
@@ -105,7 +105,7 @@
             </Border>
             
             <!-- Option B: Manual Key -->
-            <Button Content="Já tenho uma Chave (Entrar Manualmente)" Command="{Binding SwitchToOfflineModeCommand}" Style="{StaticResource SecondaryButton}"/>
+            <Button Content="Já tenho uma chave (Digitar Manualmente)" Command="{Binding SwitchToOfflineModeCommand}" Style="{StaticResource SecondaryButton}"/>
         </StackPanel>
         
         <StackPanel Grid.Row="2" Margin="0,24,0,0">

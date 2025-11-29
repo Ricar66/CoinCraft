@@ -105,15 +105,12 @@ namespace CoinCraft.App.ViewModels
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict) // 409
                 {
                     StatusMessage = string.Empty; // Limpa mensagem de status anterior
-                    MessageBox.Show("Este computador já tem licença! Por favor, clique em 'Já tenho uma Chave' e cole sua licença antiga.", "Licença Existente", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden || response.StatusCode == System.Net.HttpStatusCode.NotFound) // 403 or 404
-                {
-                    StatusMessage = "E-mail não encontrado ou sem compras.";
+                    MessageBox.Show("Identificamos que este computador já tem uma licença! Por favor, use a opção manual e cole sua chave antiga.", "Licença Existente", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 else
                 {
-                    StatusMessage = $"Erro no servidor: {response.StatusCode}";
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    StatusMessage = !string.IsNullOrWhiteSpace(errorContent) ? errorContent : $"Erro no servidor: {response.StatusCode}";
                 }
             }
             catch (Exception ex)
