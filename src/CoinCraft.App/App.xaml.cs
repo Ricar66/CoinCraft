@@ -498,11 +498,12 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
             catch { }
         }
 
-        // Abrir janela principal somente após finalizar a inicialização do banco e licença válida
-        var main = new MainWindow();
-        Application.Current.MainWindow = main;
+        // Abrir Dashboard como janela principal após inicialização e licença válida
+        var dashboard = new CoinCraft.App.Views.DashboardWindow();
+        Application.Current.MainWindow = dashboard;
         Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        main.Show();
+        dashboard.Show();
+        dashboard.Activate();
 
         // Aplicar tema e tela inicial conforme configurações do usuário
         try
@@ -514,17 +515,12 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
             Application.Current.Resources["AppBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(bg);
             Application.Current.Resources["AppForegroundBrush"] = new System.Windows.Media.SolidColorBrush(fg);
 
-            // Tela inicial
+            // Tela inicial: se for lançamentos, abre janela após o Dashboard principal
             var initial = settingsVm.TelaInicial?.ToLowerInvariant();
-            if (initial == "dashboard")
+            if (initial == "lancamentos")
             {
-                var win = new CoinCraft.App.Views.DashboardWindow { Owner = main };
-                win.ShowDialog();
-            }
-            else if (initial == "lancamentos")
-            {
-                var win = new CoinCraft.App.Views.TransactionsWindow { Owner = main };
-                win.ShowDialog();
+                var tx = new CoinCraft.App.Views.TransactionsWindow { Owner = dashboard };
+                tx.Show();
             }
         }
         catch (Exception exInit)
