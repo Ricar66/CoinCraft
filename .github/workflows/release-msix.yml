@@ -9,6 +9,9 @@ on:
 jobs:
   build-release:
     runs-on: windows-latest
+    env:
+      PFX_BASE64: ${{ secrets.COINCRAFT_PFX_BASE64 }}
+      PFX_PASSWORD: ${{ secrets.COINCRAFT_PFX_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,19 +40,21 @@ jobs:
             p:Platform=x86
 
       - name: Prepare code signing certificate (optional)
-        if: ${{ secrets.COINCRAFT_PFX_BASE64 != '' }}
+        if: ${{ env.PFX_BASE64 != '' }}
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "scripts/certs" | Out-Null
-          $bytes = [Convert]::FromBase64String("${{ secrets.COINCRAFT_PFX_BASE64 }}")
+          $base64 = $Env:PFX_BASE64
+          if ([string]::IsNullOrWhiteSpace($base64)) { exit 0 }
+          $bytes = [Convert]::FromBase64String($base64)
           [IO.File]::WriteAllBytes("scripts/certs/CoinCraft_dev.pfx", $bytes)
 
       - name: Sign MSIX packages (optional)
-        if: ${{ secrets.COINCRAFT_PFX_BASE64 != '' }}
+        if: ${{ env.PFX_BASE64 != '' }}
         shell: pwsh
         run: |
           $pfx = "scripts/certs/CoinCraft_dev.pfx"
-          $pwd = "${{ secrets.COINCRAFT_PFX_PASSWORD }}"
+          $pwd = $Env:PFX_PASSWORD
           $signtool = "$Env:ProgramFiles(x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
           if (-not (Test-Path $signtool)) {
             $candidate = Get-ChildItem "$Env:ProgramFiles(x86)\Windows Kits\10\bin" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'signtool.exe' -and $_.FullName -like '*\\x64\\*' } | Select-Object -ExpandProperty FullName -First 1
@@ -60,11 +65,11 @@ jobs:
           }
 
       - name: Export public certificate (CER) from PFX (optional)
-        if: ${{ secrets.COINCRAFT_PFX_BASE64 != '' }}
+        if: ${{ env.PFX_BASE64 != '' }}
         shell: pwsh
         run: |
           $pfxPath = "scripts/certs/CoinCraft_dev.pfx"
-          $pwd = "${{ secrets.COINCRAFT_PFX_PASSWORD }}"
+          $pwd = $Env:PFX_PASSWORD
           $secure = ConvertTo-SecureString -String $pwd -AsPlainText -Force
           $cert = Get-PfxCertificate -FilePath $pfxPath -Password $secure
           New-Item -ItemType Directory -Force -Path "dist/CoinCraft_Distribuicao" | Out-Null
