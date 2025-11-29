@@ -19,7 +19,7 @@ public partial class App : Application
 {
     public static IServiceProvider? Services { get; private set; }
     private static Mutex? _singleInstanceMutex;
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
@@ -480,15 +480,21 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         }
 
         var licensing = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicensingService>();
-        var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
-        if (validRes.IsValid)
+        var validRes = await licensing.ValidateExistingAsync();
+        if (!validRes.IsValid)
         {
-            OpenDashboard();
+            var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
+            var owner = Application.Current.MainWindow;
+            if (owner != null && !ReferenceEquals(owner, licWin)) licWin.Owner = owner;
+            var ok = licWin.ShowDialog();
+            var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
+            if (!activated)
+            {
+                Shutdown();
+                return;
+            }
         }
-        else
-        {
-            OpenLicenseWindow(licensing);
-        }
+        OpenDashboard();
 
         // Aplicar tema e tela inicial conforme configurações do usuário
         try
