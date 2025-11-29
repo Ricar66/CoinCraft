@@ -11,14 +11,27 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Text.Json;
 using System.Diagnostics;
+using System.Threading;
 
 namespace CoinCraft.App;
 
 public partial class App : Application
 {
     public static IServiceProvider? Services { get; private set; }
+    private static Mutex? _singleInstanceMutex;
     protected override void OnStartup(StartupEventArgs e)
     {
+        try
+        {
+            _singleInstanceMutex = new Mutex(true, "CoinCraft.App.Singleton", out bool createdNew);
+            if (!createdNew)
+            {
+                MessageBox.Show("O CoinCraft já está em execução.", "Instância única", MessageBoxButton.OK, MessageBoxImage.Information);
+                Shutdown();
+                return;
+            }
+        }
+        catch { }
         // Aplicar migrations no início da aplicação para garantir schema
         try
         {
@@ -466,44 +479,23 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         }
 
         var devMode = string.Equals(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase) || Debugger.IsAttached;
+        var licensing = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicensingService>();
         if (!devMode)
         {
-            var httpClient = Services!.GetRequiredService<HttpClient>();
-            var apiClient = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicenseApiClient>();
-            var licensing = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicensingService>();
             var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
-            if (!validRes.IsValid)
+            if (validRes.IsValid)
             {
-                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
-                var ok = licWin.ShowDialog();
-                var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
-                if (!activated)
-                {
-                    Shutdown();
-                    return;
-                }
+                OpenDashboard();
+            }
+            else
+            {
+                OpenLicenseWindow(licensing);
             }
         }
         else
         {
-            try
-            {
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                var licDir = Path.Combine(appData, "CoinCraft");
-                Directory.CreateDirectory(licDir);
-                var skipLicFile = Path.Combine(licDir, "skip.lic");
-                if (!File.Exists(skipLicFile))
-                    File.WriteAllText(skipLicFile, "dev-bypass");
-            }
-            catch { }
+            OpenDashboard();
         }
-
-        // Abrir Dashboard como janela principal após inicialização e licença válida
-        var dashboard = new CoinCraft.App.Views.DashboardWindow();
-        Application.Current.MainWindow = dashboard;
-        Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        dashboard.Show();
-        dashboard.Activate();
 
         // Aplicar tema e tela inicial conforme configurações do usuário
         try
@@ -517,9 +509,9 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
 
             // Tela inicial: se for lançamentos, abre janela após o Dashboard principal
             var initial = settingsVm.TelaInicial?.ToLowerInvariant();
-            if (initial == "lancamentos")
+            if (initial == "lancamentos" && Application.Current.MainWindow is Window owner)
             {
-                var tx = new CoinCraft.App.Views.TransactionsWindow { Owner = dashboard };
+                var tx = new CoinCraft.App.Views.TransactionsWindow { Owner = owner };
                 tx.Show();
             }
         }
@@ -529,6 +521,38 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
         }
 
         base.OnStartup(e);
+    }
+
+    private void OpenDashboard()
+    {
+        var dashboard = new CoinCraft.App.Views.DashboardWindow();
+        Application.Current.MainWindow = dashboard;
+        Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        dashboard.Show();
+        dashboard.Activate();
+    }
+
+    private void OpenLicenseWindow(CoinCraft.Services.Licensing.ILicensingService licensing)
+    {
+        try
+        {
+            var licWin = new CoinCraft.App.Views.LicenseWindow(licensing) { Owner = Application.Current.MainWindow };
+            var ok = licWin.ShowDialog();
+            var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
+            if (activated)
+            {
+                OpenDashboard();
+            }
+            else
+            {
+                Shutdown();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Erro ao abrir licença", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
+        }
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
