@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="Dashboard" Height="600" Width="1024" WindowStartupLocation="CenterOwner"
+        Title="Dashboard" MinWidth="900" MinHeight="600" WindowStartupLocation="CenterOwner"
         Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource AppForegroundBrush}">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -47,6 +47,7 @@
             <Setter Property="Margin" Value="0,12,0,0"/>
         </Style>
     </Window.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -95,30 +96,26 @@
         </StackPanel>
 
         <!-- Cards de destaque -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <UniformGrid Grid.Row="2" Columns="2" Margin="0,0,0,0">
             <Border CornerRadius="10" Margin="0,0,12,0" Style="{StaticResource CardBorder}">
                 <StackPanel>
                     <TextBlock Text="Receitas (mês)" FontWeight="Bold"/>
                     <TextBlock Text="{Binding TotalReceitas}" FontSize="22"/>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="1" CornerRadius="10" Style="{StaticResource CardBorder}">
+            <Border CornerRadius="10" Style="{StaticResource CardBorder}">
                 <StackPanel>
                     <TextBlock Text="Despesas (mês)" FontWeight="Bold"/>
                     <TextBlock Text="{Binding TotalDespesas}" FontSize="22"/>
                 </StackPanel>
             </Border>
-        </Grid>
+        </UniformGrid>
 
         <!-- Linha 2: comparação -->
         <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,16,0,0">
             <TextBlock Text="Receitas vs Despesas" Style="{StaticResource SectionHeaderText}"/>
             <Border CornerRadius="10" Margin="0,4,0,0" Style="{StaticResource CardBorder}">
-                <lvc:CartesianChart Series="{Binding ComparisonSeries}" XAxes="{Binding ComparisonXAxis}" Height="160"/>
+                <lvc:CartesianChart Series="{Binding ComparisonSeries}" XAxes="{Binding ComparisonXAxis}" Height="300"/>
             </Border>
         </StackPanel>
 
@@ -131,10 +128,10 @@
             <GroupBox Header="Despesas por Categoria (mês)">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <ListView ItemsSource="{Binding DespesasPorCategoria}" MinWidth="260">
+                    <ListView ItemsSource="{Binding DespesasPorCategoria}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="Categoria" DisplayMemberBinding="{Binding Name}" Width="180"/>
@@ -143,7 +140,7 @@
                         </ListView.View>
                     </ListView>
                     <Border Grid.Column="1" Margin="12,0,0,0" CornerRadius="10" Style="{StaticResource CardBorder}">
-                        <Grid x:Name="PieHost"/>
+                        <Grid x:Name="PieHost" MinHeight="220"/>
                     </Border>
                 </Grid>
             </GroupBox>
@@ -151,7 +148,9 @@
             <GroupBox Grid.Column="1" Header="Saldos por Conta">
                 <DataGrid ItemsSource="{Binding AccountBalances}"
                           AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" CanUserDeleteRows="False">
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Conta" Binding="{Binding AccountName}" Width="*"/>
                         <DataGridTextColumn Header="Saldo" Binding="{Binding Balance}" Width="160"/>
@@ -168,7 +167,9 @@
             <GroupBox Header="Últimos Lançamentos">
                 <DataGrid ItemsSource="{Binding RecentTransactions}"
                           AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" CanUserDeleteRows="False">
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Data" Binding="{Binding Data, StringFormat=d}" Width="100"/>
                         <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
@@ -181,7 +182,9 @@
             <GroupBox Grid.Column="1" Header="Metas do mês">
                 <DataGrid ItemsSource="{Binding GoalsProgress}"
                           AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" CanUserDeleteRows="False">
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Categoria" Binding="{Binding CategoryName}" Width="*"/>
                         <DataGridTextColumn Header="Limite" Binding="{Binding Limit}" Width="120"/>
@@ -212,4 +215,5 @@
             </Grid>
         </GroupBox>
     </Grid>
+    </ScrollViewer>
 </Window>

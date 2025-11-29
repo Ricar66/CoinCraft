@@ -112,6 +112,7 @@ public partial class DashboardWindow : Window
         _pieChart ??= new PieChart { LegendPosition = LegendPosition.Right };
         _pieChart.Series = _vm.PieSeries?.ToList() ?? new System.Collections.Generic.List<ISeries>();
         var vb = new Viewbox { Stretch = System.Windows.Media.Stretch.Uniform };
+        vb.SizeChanged += (s, e) => { _pieChart.Height = Math.Max(180, PieHost.ActualHeight - 20); };
         vb.Child = _pieChart;
         PieHost.Children.Clear();
         PieHost.Children.Add(vb);
