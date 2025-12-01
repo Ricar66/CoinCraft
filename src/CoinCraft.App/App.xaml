@@ -17,6 +17,8 @@
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#212121"/>
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#757575"/>
         <SolidColorBrush x:Key="TextHintBrush" Color="#BDBDBD"/>
+        <SolidColorBrush x:Key="AppForegroundBrush" Color="#000000"/> 
+
         
         <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F5F5F7"/>
         <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF"/>
