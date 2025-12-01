@@ -28,10 +28,12 @@ public sealed partial class DashboardViewModel : ObservableObject
     {
         private readonly ReportService? _reportService;
         private readonly ExportService _exportService = new();
+        private readonly Func<CoinCraftDbContext> _contextFactory;
 
-    public DashboardViewModel(ReportService? reportService = null)
+    public DashboardViewModel(ReportService? reportService = null, Func<CoinCraftDbContext>? contextFactory = null)
     {
         _reportService = reportService;
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
     }
     public DateTime? FilterFrom { get; set; }
     public DateTime? FilterTo { get; set; }
@@ -123,7 +125,7 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public async Task LoadAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var today = DateTime.Today;
         var firstDay = new DateTime(today.Year, today.Month, 1);
         var nextMonth = firstDay.AddMonths(1);

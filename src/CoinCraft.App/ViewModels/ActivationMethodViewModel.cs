@@ -13,7 +13,7 @@ namespace CoinCraft.App.ViewModels
     {
         private readonly ILicensingService _licensingService;
         private readonly HttpClient _httpClient;
-        private const string ApiUrl = "https://codecraftgenz.com.br/api/licenses/activate-by-email";
+        private const string ApiUrl = "https://codecraftgenz.com.br/";
 
         // IsEmailMode is no longer needed as logic is direct, but keeping for compatibility if View still binds (removed in XAML)
         [ObservableProperty]
