@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Editar Lançamento" Height="550" Width="600" WindowStartupLocation="CenterOwner"
-        Background="{StaticResource AppBackgroundBrush}" ResizeMode="NoResize">
+        Background="{DynamicResource AppBackgroundBrush}" ResizeMode="NoResize">
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -10,9 +10,9 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Detalhes do Lançamento" Style="{StaticResource HeaderTextStyle}"/>
+        <TextBlock Text="Detalhes do Lançamento" Style="{DynamicResource HeaderTextStyle}"/>
 
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="24">
+        <Border Grid.Row="1" Style="{DynamicResource CardStyle}" Padding="24">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -31,36 +31,36 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Data" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Data" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <DatePicker x:Name="DataPicker" Grid.Column="1" Margin="0,0,0,16" HorizontalAlignment="Stretch"/>
 
-                    <TextBlock Text="Tipo" Grid.Row="1" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Tipo" Grid.Row="1" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <ComboBox x:Name="TipoCombo" Grid.Row="1" Grid.Column="1" Margin="0,0,0,16" HorizontalAlignment="Stretch"/>
 
-                    <TextBlock Text="Valor" Grid.Row="2" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Valor" Grid.Row="2" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <TextBox x:Name="ValorBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,16"/>
 
-                    <TextBlock Text="Conta" Grid.Row="3" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Conta" Grid.Row="3" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <ComboBox x:Name="ContaCombo" Grid.Row="3" Grid.Column="1" Margin="0,0,0,16" DisplayMemberPath="Nome" SelectedValuePath="Id" HorizontalAlignment="Stretch"/>
 
-                    <TextBlock Text="Categoria" Grid.Row="4" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Categoria" Grid.Row="4" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <ComboBox x:Name="CategoriaCombo" Grid.Row="4" Grid.Column="1" Margin="0,0,0,16" DisplayMemberPath="Nome" SelectedValuePath="Id" HorizontalAlignment="Stretch"/>
 
-                    <TextBlock Text="Descrição" Grid.Row="5" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Descrição" Grid.Row="5" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <TextBox x:Name="DescricaoBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,16"/>
 
-                    <TextBlock Text="Conta Destino" Grid.Row="6" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Conta Destino" Grid.Row="6" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <ComboBox x:Name="ContaDestinoCombo" Grid.Row="6" Grid.Column="1" Margin="0,0,0,16" DisplayMemberPath="Nome" SelectedValuePath="Id" HorizontalAlignment="Stretch"/>
 
-                    <TextBlock Text="Comprovante" Grid.Row="7" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Comprovante" Grid.Row="7" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,16">
-                        <Button x:Name="SelectAttachmentButton" Content="Selecionar..." Click="OnSelectAttachmentClick" Style="{StaticResource SecondaryButtonStyle}" Padding="12,6"/>
-                        <TextBlock x:Name="AttachmentNameText" Margin="12,0,0,0" VerticalAlignment="Center" Text="Nenhum arquivo" FontStyle="Italic" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Button x:Name="SelectAttachmentButton" Content="Selecionar..." Click="OnSelectAttachmentClick" Style="{DynamicResource SecondaryButtonStyle}" Padding="12,6"/>
+                        <TextBlock x:Name="AttachmentNameText" Margin="12,0,0,0" VerticalAlignment="Center" Text="Nenhum arquivo" FontStyle="Italic" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                        <Button Content="Cancelar" IsCancel="True" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,12,0"/>
-                        <Button Content="Salvar" Click="OnSaveClick" IsDefault="True" Style="{StaticResource PrimaryButtonStyle}" Width="100"/>
+                        <Button Content="Cancelar" IsCancel="True" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,12,0"/>
+                        <Button Content="Salvar" Click="OnSaveClick" IsDefault="True" Style="{DynamicResource PrimaryButtonStyle}" Width="100"/>
                     </StackPanel>
                 </Grid>
             </ScrollViewer>
