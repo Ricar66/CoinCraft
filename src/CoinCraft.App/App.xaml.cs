@@ -27,6 +27,7 @@ public partial class App : Application
         // antes que o banco de dados seja lido.
         Application.Current.Resources["AppBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
         Application.Current.Resources["AppForegroundBrush"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
+        Application.Current.Resources["BoolToVis"] = new System.Windows.Controls.BooleanToVisibilityConverter();
 
         try
         {
