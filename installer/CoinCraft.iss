@@ -22,7 +22,7 @@ DisableProgramGroupPage=yes
 SetupMutex=CoinCraftSetupMutex
 ; Local onde o instalador final será salvo (pasta Output na raiz ou onde você preferir)
 OutputDir=..\installer\Output
-OutputBaseFilename=InstalarCoinCraft_Setup
+OutputBaseFilename=InstalarCoinCraft_Setup_v2
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
