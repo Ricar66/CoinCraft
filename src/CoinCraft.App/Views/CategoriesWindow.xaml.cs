@@ -58,4 +58,18 @@ public partial class CategoriesWindow : Window
             await _vm.LoadAsync();
         }
     }
+
+    // Navigation
+    private void OnGoDashboard(object sender, RoutedEventArgs e) { Close(); }
+    private void OnGoTransactions(object sender, RoutedEventArgs e) { new TransactionsWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoAccounts(object sender, RoutedEventArgs e) { new AccountsWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoCategories(object sender, RoutedEventArgs e) { /* Already here */ }
+    private void OnGoRecurring(object sender, RoutedEventArgs e) { new RecurringWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoImport(object sender, RoutedEventArgs e) { new ImportWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoSettings(object sender, RoutedEventArgs e) 
+    { 
+        var vm = App.Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+        new SettingsWindow(vm) { Owner = Owner }.Show(); 
+        Close(); 
+    }
 }

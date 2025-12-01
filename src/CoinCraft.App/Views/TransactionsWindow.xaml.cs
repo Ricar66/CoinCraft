@@ -101,17 +101,20 @@ public partial class TransactionsWindow : Window
 
     private void OnExportPdfClick(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var dest = Path.Combine(docs, "CoinCraftExports");
-            var report = new CoinCraft.Services.ReportService();
-            var path = report.ExportTransactionsPdf(dest, _vm.FilterFrom, _vm.FilterTo, _vm.FilterAccountId, _vm.FilterCategoryId);
-            MessageBox.Show($"PDF exportado em:\n{path}", "Exportação PDF", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message, "Erro na exportação PDF", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+        // Not implemented yet or removed from UI
+    }
+
+    // Navigation
+    private void OnGoDashboard(object sender, RoutedEventArgs e) { Close(); }
+    private void OnGoTransactions(object sender, RoutedEventArgs e) { /* Already here */ }
+    private void OnGoAccounts(object sender, RoutedEventArgs e) { new AccountsWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoCategories(object sender, RoutedEventArgs e) { new CategoriesWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoRecurring(object sender, RoutedEventArgs e) { new RecurringWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoImport(object sender, RoutedEventArgs e) { new ImportWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoSettings(object sender, RoutedEventArgs e) 
+    { 
+        var vm = App.Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+        new SettingsWindow(vm) { Owner = Owner }.Show(); 
+        Close(); 
     }
 }
