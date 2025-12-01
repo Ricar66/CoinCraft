@@ -22,6 +22,12 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // Inicializar recursos de tema com valores padrão para evitar StaticResourceExtension exception
+        // antes que o banco de dados seja lido.
+        Application.Current.Resources["AppBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
+        Application.Current.Resources["AppForegroundBrush"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
+
         try
         {
             _singleInstanceMutex = new Mutex(true, "CoinCraft.App.Singleton", out bool createdNew);
