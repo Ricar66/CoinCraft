@@ -31,6 +31,40 @@ public partial class App : Application
 
         try
         {
+            string? foundKeyPath = null;
+            string baseDir = AppContext.BaseDirectory;
+            var candidates = new[]
+            {
+                System.IO.Path.Combine(baseDir, "public.xml"),
+                System.IO.Path.Combine(baseDir, "public.pem"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft", "public.xml"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft", "public.pem"),
+                // Dev machine known location
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive - Tracbel", "Área de Trabalho", "CoinCraft", "publish_final", "public.xml"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive - Tracbel", "Área de Trabalho", "CoinCraft", "publish_final", "public.pem")
+            };
+            foreach (var c in candidates)
+            {
+                if (System.IO.File.Exists(c)) { foundKeyPath = c; break; }
+            }
+            if (!string.IsNullOrWhiteSpace(foundKeyPath))
+            {
+                if (foundKeyPath.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                    Environment.SetEnvironmentVariable("COINCRAFT_PUBLICKEY_XML_PATH", foundKeyPath);
+                else
+                    Environment.SetEnvironmentVariable("COINCRAFT_PUBLICKEY_PEM_PATH", foundKeyPath);
+                Environment.SetEnvironmentVariable("COINCRAFT_ALLOW_OFFLINE", "1");
+                new LogService().Info($"Chave pública para offline localizada em: {foundKeyPath}");
+            }
+            else
+            {
+                new LogService().Info("Chave pública não encontrada nos caminhos padrão; offline pode falhar.");
+            }
+        }
+        catch { }
+
+        try
+        {
             _singleInstanceMutex = new Mutex(true, "CoinCraft.App.Singleton", out bool createdNew);
             if (!createdNew)
             {
