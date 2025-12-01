@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $adminPublish = Join-Path $root 'admin_publish'
-$appPublish = Join-Path $root 'publish'
+$appPublish = Join-Path $root 'publish_final'
 New-Item -ItemType Directory -Force -Path $adminPublish | Out-Null
 New-Item -ItemType Directory -Force -Path $appPublish | Out-Null
 
