@@ -10,62 +10,6 @@
         Background="White"
         Foreground="#212121">
     
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#3F51B5"/>
-        
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.6"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <Style x:Key="SecondaryButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#757575"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#F5F5F5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
     <Grid Margin="32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Logo/Header -->
@@ -74,24 +18,23 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,32">
-            <TextBlock Text="CoinCraft" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource AccentBrush}"/>
-            <TextBlock Text="Bem-vindo ao CoinCraft" FontSize="16" Foreground="#757575" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            <TextBlock Text="CoinCraft" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBrush}"/>
+            <TextBlock Text="Bem-vindo ao CoinCraft" FontSize="16" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20">
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="Como deseja ativar seu produto?" FontSize="15" FontWeight="Medium" Foreground="#424242" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                <TextBlock Text="Como deseja ativar seu produto?" FontSize="15" FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20" HorizontalAlignment="Center"/>
                 
                 <!-- Option A: Email Panel -->
-                <Border Background="#F9F9F9" CornerRadius="8" Padding="16" Margin="0,0,0,20">
+                <Border Background="{StaticResource AppBackgroundBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,20">
                     <StackPanel>
-                        <TextBlock Text="E-mail de compra" FontSize="12" Foreground="#616161" Margin="0,0,0,4"/>
-                        <Border BorderBrush="#BDBDBD" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12" Background="White">
-                            <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Padding="10" FontSize="14" BorderThickness="0" Background="Transparent"/>
-                        </Border>
+                        <TextBlock Text="E-mail de compra" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+                        
                         <Button Content="Ativar Online" Command="{Binding ValidateEmailCommand}">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsLoading}" Value="True">
                                             <Setter Property="IsEnabled" Value="False"/>
@@ -100,19 +43,20 @@
                                 </Style>
                             </Button.Style>
                         </Button>
+                        
                         <ProgressBar IsIndeterminate="True" Height="4" Margin="0,8,0,0" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="#D32F2F" TextWrapping="Wrap" HorizontalAlignment="Center" FontSize="12" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" HorizontalAlignment="Center" FontSize="12" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Border>
                 
                 <!-- Option B: Manual Key -->
-                <Button Content="Já tenho uma chave (Digitar Manualmente)" Command="{Binding SwitchToOfflineModeCommand}" Style="{StaticResource SecondaryButton}"/>
+                <Button Content="Já tenho uma chave (Digitar Manualmente)" Command="{Binding SwitchToOfflineModeCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
             </StackPanel>
         </ScrollViewer>
         
         <StackPanel Grid.Row="2" Margin="0,0,0,0">
-            <Separator Background="#EEEEEE" Margin="0,0,0,12"/>
-            <TextBlock Text="Precisa de ajuda? suporte@coincraft.com" FontSize="12" Foreground="#9E9E9E" HorizontalAlignment="Center"/>
+            <Separator Background="{StaticResource BorderBrush}" Margin="0,0,0,12"/>
+            <TextBlock Text="Precisa de ajuda? suporte@coincraft.com" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
         </StackPanel>
     </Grid>
 </Window>
