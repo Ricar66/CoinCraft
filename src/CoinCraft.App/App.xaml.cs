@@ -60,6 +60,7 @@ public partial class App : Application
             {
                 new LogService().Info("Chave pública não encontrada nos caminhos padrão; offline pode falhar.");
             }
+            LogResources();
         }
         catch { }
 
@@ -626,8 +627,32 @@ INSERT OR IGNORE INTO UserSettings (Chave, Valor) VALUES ('tela_inicial', 'dashb
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         var log = new LogService();
-        log.Error($"Unhandled: {e.Exception}");
-        MessageBox.Show(e.Exception.Message, "Erro inesperado", MessageBoxButton.OK, MessageBoxImage.Error);
+        string details;
+        if (e.Exception is System.Windows.Markup.XamlParseException xe)
+        {
+            details = $"XamlParse: {xe.Message} | Inner: {xe.InnerException?.GetType().Name}: {xe.InnerException?.Message} | Line: {xe.LineNumber} | Uri: {xe.BaseUri}";
+        }
+        else
+        {
+            details = e.Exception.ToString();
+        }
+        log.Error(details);
+        MessageBox.Show(details, "Erro inesperado", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
+    }
+
+    private static void LogResources()
+    {
+        var log = new LogService();
+        var keys = new[]
+        {
+            "AppBackgroundBrush","AppForegroundBrush","PrimaryBrush","PrimaryDarkBrush","AccentBrush","SuccessBrush","DangerBrush","WarningBrush",
+            "TextPrimaryBrush","TextSecondaryBrush","CardBackgroundBrush","BorderBrush","HeaderTextStyle","SectionHeaderStyle","PrimaryButtonStyle","SecondaryButtonStyle","MenuButtonStyle","BoolToVis"
+        };
+        foreach (var k in keys)
+        {
+            var present = Application.Current.Resources.Contains(k);
+            log.Info($"Resource {k}: {(present ? "OK" : "MISSING")}");
+        }
     }
 }
