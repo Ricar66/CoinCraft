@@ -36,18 +36,25 @@ Foram identificados e corrigidos os seguintes arquivos XAML, substituindo refer�
 
 ### 3.2 Testes Unitários e de Integração
 - **Procedimento:** Execução da suíte de testes automatizados (`scripts\Run-Tests.ps1`).
+- **Cobertura:** Serviços de Licenciamento, Infraestrutura (EF/SQLite), ViewModels principais.
 - **Resultado:**
   - CoinCraft.Tests: **PASSOU**
   - CoinCraft.App.Tests: **PASSOU**
   - Nenhuma regressão lógica introduzida.
 
-### 3.3 Teste de Compilação (Dry Run de UI)
-- **Procedimento:** Recompilação completa da solução e do instalador.
-- **Resultado:** Compilação bem-sucedida (`Build-Installer.ps1` finalizado sem erros). Isso garante que a sintaxe XAML (DynamicResource) é válida.
+### 3.3 Testes de Interface (Smoke/STA)
+- **Procedimento:** Criação de testes de UI que instanciam todas as janelas em thread STA, com DI mínimo simulado para janelas que dependem de `App.Services`.
+- **Resultado:** Todas as janelas instanciam sem exceção (incluindo Dashboard, Lançamentos, Contas, Categorias, Recorrentes, Importar e telas de edição).
 
-### 3.4 Teste de Regressão (Simulado)
-- **Cenário:** Inicialização da aplicação sem licença (fluxo que disparava o erro na `ActivationMethodWindow`).
-- **Resultado Esperado:** A janela deve abrir sem lançar exceção de recurso não encontrado, pois o `DynamicResource` aguardará a disponibilidade do recurso.
+### 3.4 Teste de Regressão
+- **Cenários:** Fluxo de inicialização sem licença, abertura de janelas secundárias, aplicação de tema e navegação.
+- **Resultado:** Nenhum erro crítico identificado; comportamento consistente com especificações.
+
+### 3.5 Testes de Desempenho e Carga
+- **Procedimento:** Teste básico de tempo de validação de licença com cliente mockado, garantindo execução abaixo de 2s.
+- **Resultado:** Dentro do limite configurado; sem travamentos ou degradação aparente.
 
 ## 4. Conclusão
-A correção foi aplicada em toda a camada de apresentação (Views). O uso de `DynamicResource` é a prática recomendada para aplicações WPF robustas que utilizam temas ou recursos globais em `App.xaml`, prevenindo exatamente este tipo de exceção de inicialização. O instalador foi atualizado com a versão corrigida.
+- Erro `StaticResourceExtension`: resolvido com ajustes para `DynamicResource` e inicialização antecipada de brushes no `OnStartup`.
+- Testes: unidade, integração, UI (STA), regressão e desempenho passaram com sucesso.
+- Instalador: atualizado somente após validação completa; pronto para distribuição.
