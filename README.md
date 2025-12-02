@@ -60,5 +60,9 @@ Para reportar bugs, sugerir melhorias ou tirar dúvidas que não estejam no FAQ:
 -   **Site:** www.coincraft.com/suporte
 -   **Horário de Atendimento:** Segunda a Sexta, das 9h às 18h.
 
+## 8. Ferramentas de Desenvolvimento
+- **Gerador de Licenças:** Utilize o script `generate_license.ps1` na raiz do projeto para criar chaves de licença válidas para testes offline.
+  - Uso: `.\generate_license.ps1 -Fingerprint "SEU_FINGERPRINT"`
+
 ---
 *CoinCraft © 2025 - Todos os direitos reservados.*
