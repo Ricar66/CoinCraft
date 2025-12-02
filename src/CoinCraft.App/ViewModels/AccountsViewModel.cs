@@ -6,12 +6,16 @@ using CoinCraft.Domain;
 using CoinCraft.Infrastructure;
 using CoinCraft.Services;
 using System.Windows;
+using CommunityToolkit.Mvvm.Messaging;
+using CoinCraft.App.Messages;
 
 namespace CoinCraft.App.ViewModels;
 
 public sealed class AccountsViewModel : ObservableObject
 {
     private readonly LogService _log;
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+
     public ObservableCollection<string> AvailableColors { get; } = new()
     {
         "#4CAF50", "#FFC107", "#FF7043", "#42A5F5", "#66BB6A",
@@ -38,14 +42,15 @@ public sealed class AccountsViewModel : ObservableObject
         set => SetProperty(ref _selectedAccount, value);
     }
 
-    public AccountsViewModel(LogService log)
+    public AccountsViewModel(LogService log, Func<CoinCraftDbContext>? contextFactory = null)
     {
         _log = log;
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
     }
 
     public async Task LoadAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var list = await Task.Run(() => db.Accounts.OrderBy(a => a.Nome).ToList());
         Accounts = new ObservableCollection<Account>(list);
         StatusMessage = $"{Accounts.Count} contas carregadas.";
@@ -55,10 +60,11 @@ public sealed class AccountsViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             db.Accounts.Add(account);
             await db.SaveChangesAsync();
             StatusMessage = "Conta adicionada com sucesso.";
+            WeakReferenceMessenger.Default.Send(new AccountsChangedMessage("Add"));
         }
         catch (Exception ex)
         {
@@ -71,7 +77,7 @@ public sealed class AccountsViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             var entity = await db.Accounts.FindAsync(updated.Id);
             if (entity is null) return;
 
@@ -84,6 +90,7 @@ public sealed class AccountsViewModel : ObservableObject
 
             await db.SaveChangesAsync();
             StatusMessage = "Conta atualizada com sucesso.";
+            WeakReferenceMessenger.Default.Send(new AccountsChangedMessage("Update"));
         }
         catch (Exception ex)
         {
@@ -96,12 +103,13 @@ public sealed class AccountsViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             var entity = await db.Accounts.FindAsync(account.Id);
             if (entity is null) return;
             db.Accounts.Remove(entity);
             await db.SaveChangesAsync();
             StatusMessage = "Conta excluída com sucesso.";
+            WeakReferenceMessenger.Default.Send(new AccountsChangedMessage("Delete"));
         }
         catch (Exception ex)
         {

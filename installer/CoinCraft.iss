@@ -1,7 +1,7 @@
 ; Script gerado para o Inno Setup
 ; O nome do aplicativo é definido aqui
 #define MyAppName "CoinCraft"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "CodeCraftGenz"
 #define MyAppURL "https://www.codecraftgenz.com.br/"
 #define MyAppExeName "CoinCraft.App.exe"
@@ -21,8 +21,8 @@ DisableProgramGroupPage=yes
 ; Remove a mensagem "O instalador já está rodando" se for atualização silenciosa
 SetupMutex=CoinCraftSetupMutex
 ; Local onde o instalador final será salvo (pasta Output na raiz ou onde você preferir)
-OutputDir=..\installer\Output
-OutputBaseFilename=InstalarCoinCraft_Setup_v2
+OutputDir=.
+OutputBaseFilename=CoinCraftSetup
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -35,11 +35,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; ATENÇÃO: Aqui ele busca os arquivos que você gerou com o comando 'dotnet publish'
-; O comando de publish deve ter sido: dotnet publish ... -o ./publish
-Source: "..\publish_final\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\publish_final\LatoFont\*"; DestDir: "{app}\LatoFont"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
-Source: "..\publish_final\public.xml"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
-Source: "..\publish_final\public.pem"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\publish_final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

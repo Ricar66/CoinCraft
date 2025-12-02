@@ -39,7 +39,8 @@
                     <Button Content="Categorias" Click="OnGoCategories" Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
                     <Button Content="Recorrentes" Click="OnGoRecurring" Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
                     <Button Content="Importar" Click="OnGoImport" Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
-                    <Button Content="Configurações" Click="OnGoSettings" Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <Button Content="Ajuda" Click="OnGoManual" Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="Bold" Margin="0,0,10,0"/>
+                    <Button Content="⚙" Click="OnGoSettings" Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}" ToolTip="Configurações"/>
                 </StackPanel>
             </Border>
 

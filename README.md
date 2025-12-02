@@ -1,69 +1,64 @@
-# ![CoinCraft Logo](assents/logo-codecraft.png) CoinCraft
+# CoinCraft - Sistema de Gestão Financeira Pessoal
 
-**Seu gerenciador financeiro pessoal, 100% offline e focado na sua privacidade.**
+## 1. Visão Geral e Objetivos
+O **CoinCraft** é uma solução robusta e intuitiva para controle financeiro pessoal, desenvolvida para ajudar usuários a monitorarem suas receitas, despesas, metas e patrimônio de forma eficiente. O sistema opera localmente (offline), garantindo total privacidade e segurança dos dados.
 
-O CoinCraft é um aplicativo desktop para Windows projetado para quem deseja controle total sobre suas finanças sem depender de serviços online ou assinaturas. Todos os seus dados ficam salvos exclusivamente no seu computador.
+**Objetivos:**
+- Centralizar todas as informações financeiras em um único lugar.
+- Fornecer visualizações claras através de dashboards e gráficos interativos.
+- Automatizar lançamentos recorrentes para facilitar a gestão.
+- Permitir a importação de dados bancários para agilizar o registro.
 
-![Badge .NET 8](https://img.shields.io/badge/.NET-8.0-blue?style=for-the-badge&logo=.net)
-![Badge WPF](https://img.shields.io/badge/WPF-Windows-blueviolet?style=for-the-badge&logo=windows)
-![Badge SQLite](https://img.shields.io/badge/SQLite-Local_Database-green?style=for-the-badge&logo=sqlite)
+## 2. Requisitos do Sistema
+Para executar o CoinCraft, seu computador deve atender aos seguintes requisitos mínimos:
+- **Sistema Operacional:** Windows 10 (versão 19041 ou superior) ou Windows 11.
+- **Arquitetura:** x64.
+- **Processador:** Intel Core i3 ou equivalente (Recomendado: i5 ou superior).
+- **Memória RAM:** 4 GB (Recomendado: 8 GB).
+- **Espaço em Disco:** 100 MB livres.
+- **Framework:** .NET 8.0 (já incluído no instalador).
+
+## 3. Instalação e Configuração
+1.  **Baixe o Instalador:** Utilize o arquivo `CoinCraftSetup.exe` fornecido.
+2.  **Execute a Instalação:** Dê um duplo clique no instalador e siga as instruções na tela.
+3.  **Primeiro Acesso:**
+    - Ao abrir o sistema pela primeira vez, o banco de dados local será criado automaticamente.
+    - Você poderá cadastrar suas contas iniciais e categorias.
+4.  **Licenciamento:**
+    - Se solicitado, insira sua chave de ativação ou utilize o modo de avaliação, se disponível.
+
+## 4. Guia Rápido de Utilização
+-   **Dashboard:** Sua tela inicial com resumos mensais, gráficos de despesas por categoria e acompanhamento de metas.
+-   **Lançamentos:** Registre receitas, despesas e transferências. Anexe comprovantes se desejar.
+-   **Contas:** Gerencie suas contas bancárias e carteiras físicas. Mantenha os saldos atualizados.
+-   **Recorrentes:** Cadastre contas fixas (aluguel, assinaturas) para lançamento automático.
+-   **Importar:** Traga dados de extratos bancários (OFX/CSV) para o sistema.
+-   **Manual do Usuário:** Acesse o botão "Ajuda" no menu principal para um guia detalhado dentro do aplicativo.
+
+## 5. Fluxo de Atualização do Instalador (Desenvolvimento)
+Para manter a consistência e evitar duplicidade de versões, o processo de geração de novas versões do instalador foi padronizado:
+
+1.  **Localização Única:** O executável final do instalador será sempre gerado em `installer\CoinCraftSetup.exe`.
+2.  **Prevenção de Duplicatas:** O script de build remove automaticamente versões anteriores e arquivos com sufixos de versão (ex: `_v4`).
+3.  **Geração Automatizada:** Utilize o script PowerShell `installer\build_installer.ps1` para gerar uma nova versão. Este script:
+    - Compila o projeto em modo Release.
+    - Executa o compilador Inno Setup.
+    - Garante que apenas o arquivo `CoinCraftSetup.exe` permaneça na pasta.
+4.  **Controle de Versão:** A versão interna do software é definida no arquivo `.iss` e no projeto `.csproj`, mas o nome do arquivo do instalador permanece constante para facilitar a distribuição e links de download.
+
+## 6. Atualizações Futuras
+Estamos trabalhando constantemente para melhorar o CoinCraft. Próximas funcionalidades planejadas incluem:
+-   App mobile companheiro para lançamentos rápidos.
+-   Integração direta com APIs bancárias (Open Finance).
+-   Módulo de investimentos avançado (Ações, FIIs, Cripto).
+-   Temas personalizados.
+
+## 7. Suporte Técnico
+Para reportar bugs, sugerir melhorias ou tirar dúvidas que não estejam no FAQ:
+
+-   **E-mail:** suporte@coincraft.com
+-   **Site:** www.coincraft.com/suporte
+-   **Horário de Atendimento:** Segunda a Sexta, das 9h às 18h.
 
 ---
-
-## ✨ Funcionalidades Principais
-
-* **Dashboard Visual:** Tenha uma visão clara de suas finanças com gráficos de Receita vs. Despesa, gastos por categoria e evolução do seu patrimônio líquido.
-* **Controle Total:** Gerencie múltiplas contas (corrente, carteira, poupança) e crie categorias de gastos personalizadas.
-* **Lançamentos Recorrentes:** Automatize suas contas fixas (aluguel, salários, assinaturas) para nunca mais esquecer de lançá-las.
-* **Importação Rápida:** Importe seu histórico de transações de arquivos de extrato bancário (OFX, QFX e CSV).
-* **Anexar Comprovantes:** Guarde recibos, notas fiscais e comprovantes (PDF ou imagem) diretamente anexados a cada transação.
-* **Metas e Orçamentos:** Defina metas de gastos mensais por categoria e acompanhe seu progresso.
-* **Backup e Restauração:** Seus dados são seus. Faça backup de todo o seu banco de dados com um clique e restaure-o a qualquer momento.
-* **Relatórios:** Exporte seus lançamentos e resumos financeiros para PDF e CSV.
-
-## 📷 Screenshots
-
-*(**Dica:** Adicione aqui screenshots do seu app. Ex: Dashboard, Tela de Lançamentos, etc.)*
-
-| Dashboard | Tela de Lançamentos |
-| :---: | :---: |
-| _[Insira a imagem do Dashboard aqui]_ | _[Insira a imagem dos Lançamentos aqui]_ |
-| Tela de Importação | Lançamentos Recorrentes |
-| _[Insira a imagem da Importação aqui]_ | _[Insira a imagem dos Recorrentes aqui]_ |
-
----
-
-## 💻 Para Usuários: Como Instalar
-
-Você pode baixar a versão mais recente na nossa página de **Releases** (link no GitHub).
-
-O CoinCraft usa um instalador MSIX. Para instalar:
-1.  Baixe o pacote de distribuição `.zip` da última release.
-2.  Extraia os arquivos para uma pasta.
-3.  Execute o arquivo `Install-CoinCraft.cmd`.
-4.  O script pedirá permissão para instalar o certificado de segurança (necessário para a instalação) e, em seguida, instalará o aplicativo.
-5.  Pronto! O CoinCraft aparecerá no seu Menu Iniciar.
-
-*(Para instruções detalhadas, veja o `README.txt` dentro da pasta de distribuição).*
-
----
-
-## 🛠️ Para Desenvolvedores: Como Compilar
-
-Este projeto é construído com .NET 8 e WPF, usando uma arquitetura MVVM.
-
-### Pré-requisitos
-* Visual Studio 2022 (ou mais recente)
-* .NET 8 SDK
-* Workload "Desenvolvimento para Desktop com .NET"
-* (Opcional) Workload "Desenvolvimento da Plataforma Universal do Windows" (para compilar o pacote MSIX)
-
-### Executando o Projeto
-1.  Clone este repositório.
-2.  Abra o arquivo `CoinCraft.sln` no Visual Studio.
-3.  Defina o `CoinCraft.App` como projeto de inicialização (Startup Project).
-4.  Pressione **F5** para compilar e executar.
-
-O banco de dados SQLite será criado e as migrações serão aplicadas automaticamente na primeira execução.
-
-### Estrutura do Projeto
+*CoinCraft © 2025 - Todos os direitos reservados.*

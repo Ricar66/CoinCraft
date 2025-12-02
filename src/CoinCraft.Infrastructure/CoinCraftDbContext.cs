@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CoinCraft.Domain;
+using System.IO;
 
 namespace CoinCraft.Infrastructure;
 

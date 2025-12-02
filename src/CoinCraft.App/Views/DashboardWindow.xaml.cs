@@ -139,6 +139,12 @@ public partial class DashboardWindow : Window
         win.Show();
     }
 
+    private void OnGoManual(object sender, RoutedEventArgs e)
+    {
+        var win = new ManualWindow { Owner = this };
+        win.Show();
+    }
+
     private void RenderComparisonChart()
     {
         // Cartesiano vinculado via XAML (ComparisonSeries / ComparisonXAxis)

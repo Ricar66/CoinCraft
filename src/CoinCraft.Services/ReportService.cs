@@ -11,6 +11,13 @@ namespace CoinCraft.Services;
 
 public sealed class ReportService
 {
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+
+    public ReportService(Func<CoinCraftDbContext>? contextFactory = null)
+    {
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
+    }
+
     public sealed class NetWorthPoint
     {
         public int Year { get; set; }
@@ -23,40 +30,54 @@ public sealed class ReportService
     public List<NetWorthPoint> GetNetWorthHistory(int months = 12, DateTime? until = null)
     {
         if (months <= 0) months = 1;
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
 
         var endDate = until?.Date ?? DateTime.Today;
         var lastMonthEnd = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
 
-        var accounts = db.Accounts.AsNoTracking().ToList();
-        var points = new List<NetWorthPoint>();
+        // 1. Obter saldo inicial total de todas as contas
+        var initialBalancesDouble = db.Accounts.AsNoTracking().Sum(a => (double)a.SaldoInicial);
+        var initialBalances = (decimal)initialBalancesDouble;
 
+        // 2. Obter deltas diários (Receitas - Despesas - Transferências Externas)
+        // Nota: Transferências entre contas internas se anulam no saldo global.
+        // Apenas transferências para "fora" (OpostoAccountId null) reduzem o patrimônio.
+        var deltas = db.Transactions.AsNoTracking()
+            .Where(t => t.Data <= lastMonthEnd)
+            .GroupBy(t => t.Data)
+            .Select(g => new
+            {
+                Date = g.Key,
+                Receitas = g.Where(t => t.Tipo == TransactionType.Receita).Sum(t => (double)t.Valor),
+                Despesas = g.Where(t => t.Tipo == TransactionType.Despesa).Sum(t => (double)t.Valor),
+                TransfOutExternal = g.Where(t => t.Tipo == TransactionType.Transferencia && t.OpostoAccountId == null).Sum(t => (double)t.Valor)
+            })
+            .OrderBy(x => x.Date)
+            .ToList();
+
+        var points = new List<NetWorthPoint>();
+        decimal currentBalance = initialBalances;
+        int deltaIdx = 0;
+        int deltaCount = deltas.Count;
+
+        // 3. Calcular saldo acumulado para cada ponto mensal solicitado
         for (int i = months - 1; i >= 0; i--)
         {
             var periodEnd = lastMonthEnd.AddMonths(-i);
 
-            // Carrega todos os lançamentos até o fim do mês
-            var txs = db.Transactions
-                .AsNoTracking()
-                .Where(t => t.Data <= periodEnd)
-                .ToList();
-
-            decimal netWorth = 0m;
-            foreach (var acc in accounts)
+            // Avançar o saldo acumulado até a data de corte deste mês
+            while (deltaIdx < deltaCount && deltas[deltaIdx].Date <= periodEnd)
             {
-                var receitas = txs.Where(t => t.Tipo == TransactionType.Receita && t.AccountId == acc.Id).Sum(t => t.Valor);
-                var despesas = txs.Where(t => t.Tipo == TransactionType.Despesa && t.AccountId == acc.Id).Sum(t => t.Valor);
-                var transfOut = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.AccountId == acc.Id).Sum(t => t.Valor);
-                var transfIn = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.OpostoAccountId == acc.Id).Sum(t => t.Valor);
-                var saldo = acc.SaldoInicial + receitas - despesas - transfOut + transfIn;
-                netWorth += saldo;
+                var d = deltas[deltaIdx];
+                currentBalance += (decimal)(d.Receitas - d.Despesas - d.TransfOutExternal);
+                deltaIdx++;
             }
 
             points.Add(new NetWorthPoint
             {
                 Year = periodEnd.Year,
                 Month = periodEnd.Month,
-                NetWorth = netWorth
+                NetWorth = currentBalance
             });
         }
 
@@ -68,7 +89,7 @@ public sealed class ReportService
         Directory.CreateDirectory(destinationFolder);
         var file = Path.Combine(destinationFolder, $"transactions_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
 
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var query = db.Transactions.AsQueryable();
         if (from.HasValue) query = query.Where(t => t.Data >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Data <= to.Value);
@@ -101,7 +122,7 @@ public sealed class ReportService
         Directory.CreateDirectory(destinationFolder);
         var file = Path.Combine(destinationFolder, $"transactions_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
 
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var query = db.Transactions.AsQueryable();
         if (from.HasValue) query = query.Where(t => t.Data >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Data <= to.Value);
@@ -175,14 +196,14 @@ public sealed class ReportService
     {
         Directory.CreateDirectory(destinationFolder);
         var file = Path.Combine(destinationFolder, $"summary_categories_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var query = db.Transactions.AsQueryable();
         if (from.HasValue) query = query.Where(t => t.Data >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Data <= to.Value);
         var categories = db.Categories.ToDictionary(c => c.Id, c => c);
         var despesas = query.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId.HasValue)
             .GroupBy(t => t.CategoryId!.Value)
-            .Select(g => new { CategoryId = g.Key, Total = g.Sum(x => x.Valor) })
+            .Select(g => new { CategoryId = g.Key, Total = g.Sum(x => (double)x.Valor) })
             .OrderByDescending(x => x.Total)
             .ToList();
         var sb = new StringBuilder();
@@ -200,23 +221,23 @@ public sealed class ReportService
     {
         Directory.CreateDirectory(destinationFolder);
         var file = Path.Combine(destinationFolder, $"summary_accounts_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var query = db.Transactions.AsQueryable();
         if (from.HasValue) query = query.Where(t => t.Data >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Data <= to.Value);
         var accounts = db.Accounts.ToDictionary(a => a.Id, a => a);
         var receitas = query.Where(t => t.Tipo == TransactionType.Receita)
-            .GroupBy(t => t.AccountId).Select(g => new { AccountId = g.Key, Total = g.Sum(x => x.Valor) }).ToList();
+            .GroupBy(t => t.AccountId).Select(g => new { AccountId = g.Key, Total = g.Sum(x => (double)x.Valor) }).ToList();
         var despesas = query.Where(t => t.Tipo == TransactionType.Despesa)
-            .GroupBy(t => t.AccountId).Select(g => new { AccountId = g.Key, Total = g.Sum(x => x.Valor) }).ToList();
+            .GroupBy(t => t.AccountId).Select(g => new { AccountId = g.Key, Total = g.Sum(x => (double)x.Valor) }).ToList();
         var sb = new StringBuilder();
         sb.AppendLine("Conta;Receitas;Despesas");
         var accIds = receitas.Select(r => r.AccountId).Union(despesas.Select(d => d.AccountId)).Distinct();
         foreach (var id in accIds)
         {
             var conta = accounts.TryGetValue(id, out var a) ? a.Nome : $"Conta {id}";
-            var r = receitas.FirstOrDefault(x => x.AccountId == id)?.Total ?? 0m;
-            var d = despesas.FirstOrDefault(x => x.AccountId == id)?.Total ?? 0m;
+            var r = (decimal)(receitas.FirstOrDefault(x => x.AccountId == id)?.Total ?? 0);
+            var d = (decimal)(despesas.FirstOrDefault(x => x.AccountId == id)?.Total ?? 0);
             sb.AppendLine($"{conta};{r};{d}");
         }
         File.WriteAllText(file, sb.ToString(), new UTF8Encoding(true));

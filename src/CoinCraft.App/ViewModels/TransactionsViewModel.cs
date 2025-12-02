@@ -6,6 +6,8 @@ using CoinCraft.Domain;
 using CoinCraft.Infrastructure;
 using CoinCraft.Services;
 using System.Windows;
+using CommunityToolkit.Mvvm.Messaging;
+using CoinCraft.App.Messages;
 
 namespace CoinCraft.App.ViewModels;
 
@@ -57,14 +59,28 @@ public sealed class TransactionsViewModel : ObservableObject
     public int? FilterAccountId { get; set; }
     public int? FilterCategoryId { get; set; }
 
-    public TransactionsViewModel(LogService log)
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+
+    public TransactionsViewModel(LogService log, Func<CoinCraftDbContext>? contextFactory = null)
     {
         _log = log;
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
+
+        // Ouvintes para atualização de lookups
+        WeakReferenceMessenger.Default.Register<AccountsChangedMessage>(this, (r, m) =>
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<CategoriesChangedMessage>(this, (r, m) =>
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
     }
 
     public async Task LoadAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var accounts = await Task.Run(() => db.Accounts.OrderBy(a => a.Nome).ToList());
         var categories = await Task.Run(() => db.Categories.OrderBy(c => c.Nome).ToList());
         Accounts = accounts;
@@ -123,10 +139,11 @@ public sealed class TransactionsViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             db.Transactions.Add(tx);
             await db.SaveChangesAsync();
             StatusMessage = "Lançamento adicionado com sucesso.";
+            WeakReferenceMessenger.Default.Send(new TransactionsChangedMessage("Add"));
         }
         catch (Exception ex)
         {
@@ -139,7 +156,7 @@ public sealed class TransactionsViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             var entity = await db.Transactions.FindAsync(tx.Id);
             if (entity is null) return;
             // Limpa anexo antigo se foi removido ou substituído
@@ -167,6 +184,7 @@ public sealed class TransactionsViewModel : ObservableObject
             entity.AttachmentPath = tx.AttachmentPath;
             await db.SaveChangesAsync();
             StatusMessage = "Lançamento atualizado com sucesso.";
+            WeakReferenceMessenger.Default.Send(new TransactionsChangedMessage("Update"));
         }
         catch (Exception ex)
         {
@@ -179,7 +197,7 @@ public sealed class TransactionsViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             var entity = await db.Transactions.FindAsync(id);
             if (entity is null) return;
             try
@@ -197,6 +215,7 @@ public sealed class TransactionsViewModel : ObservableObject
             db.Transactions.Remove(entity);
             await db.SaveChangesAsync();
             StatusMessage = "Lançamento excluído com sucesso.";
+            WeakReferenceMessenger.Default.Send(new TransactionsChangedMessage("Delete"));
         }
         catch (Exception ex)
         {

@@ -6,12 +6,16 @@ using CoinCraft.Domain;
 using CoinCraft.Infrastructure;
 using CoinCraft.Services;
 using System.Windows;
+using CommunityToolkit.Mvvm.Messaging;
+using CoinCraft.App.Messages;
 
 namespace CoinCraft.App.ViewModels;
 
 public sealed class CategoriesViewModel : ObservableObject
 {
     private readonly LogService _log;
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+
     public ObservableCollection<string> AvailableColors { get; } = new()
     {
         "#FF7043", "#42A5F5", "#66BB6A", "#AB47BC", "#EC407A",
@@ -39,14 +43,15 @@ public sealed class CategoriesViewModel : ObservableObject
         set => SetProperty(ref _selected, value);
     }
 
-    public CategoriesViewModel(LogService log)
+    public CategoriesViewModel(LogService log, Func<CoinCraftDbContext>? contextFactory = null)
     {
         _log = log;
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
     }
 
     public async Task LoadAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var list = await Task.Run(() => db.Categories.OrderBy(c => c.Nome).ToList());
         Categories = new ObservableCollection<Category>(list);
         StatusMessage = $"{Categories.Count} categorias carregadas.";
@@ -56,10 +61,11 @@ public sealed class CategoriesViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             db.Categories.Add(cat);
             await db.SaveChangesAsync();
             StatusMessage = "Categoria adicionada com sucesso.";
+            WeakReferenceMessenger.Default.Send(new CategoriesChangedMessage("Add"));
         }
         catch (Exception ex)
         {
@@ -72,7 +78,7 @@ public sealed class CategoriesViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             var entity = await db.Categories.FindAsync(updated.Id);
             if (entity is null) return;
             entity.Nome = updated.Nome;
@@ -82,6 +88,7 @@ public sealed class CategoriesViewModel : ObservableObject
             entity.LimiteMensal = updated.LimiteMensal;
             await db.SaveChangesAsync();
             StatusMessage = "Categoria atualizada com sucesso.";
+            WeakReferenceMessenger.Default.Send(new CategoriesChangedMessage("Update"));
         }
         catch (Exception ex)
         {
@@ -94,12 +101,13 @@ public sealed class CategoriesViewModel : ObservableObject
     {
         try
         {
-            using var db = new CoinCraftDbContext();
+            using var db = _contextFactory();
             var entity = await db.Categories.FindAsync(id);
             if (entity is null) return;
             db.Categories.Remove(entity);
             await db.SaveChangesAsync();
             StatusMessage = "Categoria excluída com sucesso.";
+            WeakReferenceMessenger.Default.Send(new CategoriesChangedMessage("Delete"));
         }
         catch (Exception ex)
         {

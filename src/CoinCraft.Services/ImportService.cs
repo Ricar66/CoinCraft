@@ -7,6 +7,13 @@ namespace CoinCraft.Services;
 
 public sealed class ImportService
 {
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+
+    public ImportService(Func<CoinCraftDbContext>? contextFactory = null)
+    {
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
+    }
+
     public sealed class ImportedTransaction
     {
         public DateTime? Data { get; set; }
@@ -146,7 +153,7 @@ public sealed class ImportService
 
     public int ApplyImport(List<ImportedTransaction> items, int? defaultAccountId, int? defaultCategoryId, TransactionType? defaultTipo)
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
 
         var accounts = db.Accounts.ToList();
         var categories = db.Categories.ToList();

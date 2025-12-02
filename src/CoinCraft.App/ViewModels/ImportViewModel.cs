@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CoinCraft.Infrastructure;
 using CoinCraft.Domain;
 using CoinCraft.Services;
+using CommunityToolkit.Mvvm.Messaging;
+using CoinCraft.App.Messages;
 
 namespace CoinCraft.App.ViewModels;
 
@@ -18,6 +20,26 @@ public sealed class ImportRow
 
 public sealed class ImportViewModel : ObservableObject
 {
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+    private readonly ImportService _service;
+
+    public ImportViewModel(Func<CoinCraftDbContext>? contextFactory = null)
+    {
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
+        _service = new ImportService(_contextFactory);
+
+        // Ouvintes para atualização de lookups
+        WeakReferenceMessenger.Default.Register<AccountsChangedMessage>(this, (r, m) =>
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadLookupsAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<CategoriesChangedMessage>(this, (r, m) =>
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadLookupsAsync());
+        });
+    }
+
     public ObservableCollection<ImportRow> Items { get; } = new();
     public string? StatusMessage { get; private set; }
     public string? FilePath { get; private set; }
@@ -26,11 +48,9 @@ public sealed class ImportViewModel : ObservableObject
     public System.Collections.Generic.List<Account> Accounts { get; private set; } = new();
     public System.Collections.Generic.List<Category> Categories { get; private set; } = new();
 
-    private readonly ImportService _service = new();
-
     public async Task LoadLookupsAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         Accounts = await Task.Run(() => db.Accounts.OrderBy(a => a.Nome).ToList());
         Categories = await Task.Run(() => db.Categories.OrderBy(c => c.Nome).ToList());
     }
@@ -113,6 +133,10 @@ public sealed class ImportViewModel : ObservableObject
         var saved = _service.ApplyImport(list, defaultAccountId, defaultCategoryId, defaultTipo);
         StatusMessage = $"Importados {saved} lançamento(s)";
         OnPropertyChanged(nameof(StatusMessage));
+        if (saved > 0)
+        {
+            WeakReferenceMessenger.Default.Send(new TransactionsChangedMessage("Import"));
+        }
         return saved;
     }
 }

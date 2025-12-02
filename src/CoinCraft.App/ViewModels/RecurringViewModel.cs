@@ -5,11 +5,32 @@ using CoinCraft.Domain;
 using CoinCraft.Infrastructure;
 using System.Linq;
 using System;
+using System.Windows;
+using CommunityToolkit.Mvvm.Messaging;
+using CoinCraft.App.Messages;
 
 namespace CoinCraft.App.ViewModels;
 
 public sealed class RecurringViewModel : ObservableObject
 {
+    private readonly Func<CoinCraftDbContext> _contextFactory;
+
+    public RecurringViewModel(Func<CoinCraftDbContext>? contextFactory = null)
+    {
+        _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
+
+        // Ouvintes para atualização de lookups
+        WeakReferenceMessenger.Default.Register<AccountsChangedMessage>(this, (r, m) =>
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<CategoriesChangedMessage>(this, (r, m) =>
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+    }
+
     public ObservableCollection<RecurringTransaction> Items { get; private set; } = new();
     public string? StatusMessage { get; private set; }
     public RecurringTransaction? Selected { get; set; }
@@ -26,7 +47,7 @@ public sealed class RecurringViewModel : ObservableObject
 
     public async Task LoadAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         Accounts = db.Accounts.OrderBy(a => a.Nome).ToList();
         Categories = db.Categories.OrderBy(c => c.Nome).ToList();
 
@@ -82,16 +103,17 @@ public sealed class RecurringViewModel : ObservableObject
 
     public async Task AddAsync(RecurringTransaction r)
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         if (r.NextRunDate < DateTime.Today) r.NextRunDate = DateTime.Today;
         db.RecurringTransactions.Add(r);
         await db.SaveChangesAsync();
         StatusMessage = "Recorrente adicionado.";
+        WeakReferenceMessenger.Default.Send(new RecurringTransactionsChangedMessage("Add"));
     }
 
     public async Task UpdateAsync(RecurringTransaction r)
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var entity = await db.RecurringTransactions.FindAsync(r.Id);
         if (entity is null) return;
         entity.Nome = r.Nome;
@@ -110,15 +132,17 @@ public sealed class RecurringViewModel : ObservableObject
         entity.OpostoAccountId = r.OpostoAccountId;
         await db.SaveChangesAsync();
         StatusMessage = "Recorrente atualizado.";
+        WeakReferenceMessenger.Default.Send(new RecurringTransactionsChangedMessage("Update"));
     }
 
     public async Task DeleteAsync(int id)
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var entity = await db.RecurringTransactions.FindAsync(id);
         if (entity is null) return;
         db.RecurringTransactions.Remove(entity);
         await db.SaveChangesAsync();
         StatusMessage = "Recorrente excluído.";
+        WeakReferenceMessenger.Default.Send(new RecurringTransactionsChangedMessage("Delete"));
     }
 }

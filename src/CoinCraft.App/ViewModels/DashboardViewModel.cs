@@ -14,6 +14,8 @@ using SkiaSharp;
 using CoinCraft.Services;
 using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using CoinCraft.App.Messages;
 
 namespace CoinCraft.App.ViewModels;
 
@@ -34,6 +36,32 @@ public sealed partial class DashboardViewModel : ObservableObject
     {
         _reportService = reportService;
         _contextFactory = contextFactory ?? (() => new CoinCraftDbContext());
+
+        // Registrar ouvintes de mensagens para atualização em tempo real
+        WeakReferenceMessenger.Default.Register<TransactionsChangedMessage>(this, (r, m) => 
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<AccountsChangedMessage>(this, (r, m) => 
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<CategoriesChangedMessage>(this, (r, m) => 
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<GoalsChangedMessage>(this, (r, m) => 
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<RecurringTransactionsChangedMessage>(this, (r, m) => 
+        {
+            DispatcherHelper.InvokeAsync(async () => await LoadAsync());
+        });
     }
     public DateTime? FilterFrom { get; set; }
     public DateTime? FilterTo { get; set; }
@@ -125,83 +153,133 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public async Task LoadAsync()
     {
-        using var db = _contextFactory();
-        var today = DateTime.Today;
-        var firstDay = new DateTime(today.Year, today.Month, 1);
-        var nextMonth = firstDay.AddMonths(1);
+        if (IsLoading) return;
+        IsLoading = true;
+        try
+        {
+            using var db = _contextFactory();
+            var today = DateTime.Today;
+            var firstDay = new DateTime(today.Year, today.Month, 1);
+            var nextMonth = firstDay.AddMonths(1);
 
-        var from = FilterFrom ?? firstDay;
-        var toExclusive = FilterTo.HasValue ? FilterTo.Value.AddDays(1) : nextMonth;
-        var txs = await db.Transactions
-            .Where(t => t.Data >= from && t.Data < toExclusive)
-            .ToListAsync();
+            var from = FilterFrom ?? firstDay;
+            var toExclusive = FilterTo.HasValue ? FilterTo.Value.AddDays(1) : nextMonth;
 
-        TotalReceitas = txs.Where(t => t.Tipo == TransactionType.Receita).Sum(t => t.Valor);
-        TotalDespesas = txs.Where(t => t.Tipo == TransactionType.Despesa).Sum(t => t.Valor);
+            // Otimização: Calcular totais diretamente no banco (SQLite requer cast para double no Sum)
+            var totalRecDouble = await db.Transactions
+                .Where(t => t.Data >= from && t.Data < toExclusive && t.Tipo == TransactionType.Receita)
+                .SumAsync(t => (double)t.Valor);
+            TotalReceitas = (decimal)totalRecDouble;
 
-        // Atualiza série de comparação Receitas vs Despesas
-        UpdateComparisonSeries();
+            var totalDespDouble = await db.Transactions
+                .Where(t => t.Data >= from && t.Data < toExclusive && t.Tipo == TransactionType.Despesa)
+                .SumAsync(t => (double)t.Valor);
+            TotalDespesas = (decimal)totalDespDouble;
 
-        var categories = await db.Categories.ToDictionaryAsync(c => c.Id, c => c);
-        var porCat = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId.HasValue)
-            .GroupBy(t => t.CategoryId!.Value)
-            .Select(g => new CategorySlice
+            // Atualiza série de comparação Receitas vs Despesas
+            UpdateComparisonSeries();
+
+            // Despesas por Categoria (Pizza)
+            var catExpensesList = await db.Transactions
+                .Where(t => t.Data >= from && t.Data < toExclusive && t.Tipo == TransactionType.Despesa && t.CategoryId != null)
+                .GroupBy(t => t.CategoryId!.Value)
+                .Select(g => new { CatId = g.Key, Total = g.Sum(t => (double)t.Valor) })
+                .OrderByDescending(x => x.Total)
+                .ToListAsync();
+
+            var categories = await db.Categories.ToDictionaryAsync(c => c.Id, c => c);
+            
+            var porCat = catExpensesList.Select(x => new CategorySlice
             {
-                Name = categories.TryGetValue(g.Key, out var cat) ? cat.Nome : $"Cat {g.Key}",
-                Total = g.Sum(x => x.Valor),
-                ColorHex = categories.TryGetValue(g.Key, out var cat2) && !string.IsNullOrWhiteSpace(cat2.CorHex) ? cat2.CorHex! : "#888888"
-            })
-            .OrderByDescending(x => x.Total)
-            .ToList();
+                Name = categories.TryGetValue(x.CatId, out var cat) ? cat.Nome : $"Cat {x.CatId}",
+                Total = (decimal)x.Total,
+                ColorHex = categories.TryGetValue(x.CatId, out var cat2) && !string.IsNullOrWhiteSpace(cat2.CorHex) ? cat2.CorHex! : "#888888"
+            }).ToList();
 
-        DespesasPorCategoria = new ObservableCollection<CategorySlice>(porCat);
+            DespesasPorCategoria = new ObservableCollection<CategorySlice>(porCat);
 
-        // Atualiza séries do gráfico de pizza
-        var pie = porCat.Select(s => new PieSeries<double>
-        {
-            Name = s.Name,
-            Values = new[] { (double)s.Total },
-            Fill = new SolidColorPaint(SKColor.Parse(s.ColorHex))
-        }).Cast<ISeries>().ToArray();
-        PieSeries = pie;
-
-        // Saldos por conta
-        var accounts = await db.Accounts.ToListAsync();
-        var balances = new List<AccountBalanceItem>();
-        foreach (var acc in accounts)
-        {
-            var receitas = txs.Where(t => t.Tipo == TransactionType.Receita && t.AccountId == acc.Id).Sum(t => t.Valor);
-            var despesas = txs.Where(t => t.Tipo == TransactionType.Despesa && t.AccountId == acc.Id).Sum(t => t.Valor);
-            var transfOut = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.AccountId == acc.Id).Sum(t => t.Valor);
-            var transfIn = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.OpostoAccountId == acc.Id).Sum(t => t.Valor);
-            var saldo = acc.SaldoInicial + receitas - despesas - transfOut + transfIn;
-            balances.Add(new AccountBalanceItem { AccountName = acc.Nome, Balance = saldo });
-        }
-        AccountBalances = new ObservableCollection<AccountBalanceItem>(balances.OrderByDescending(b => b.Balance));
-
-        // Metas do mês (usa FilterFrom para ano/mês)
-        var baseMonth = new DateTime((FilterFrom ?? firstDay).Year, (FilterFrom ?? firstDay).Month, 1);
-        var goals = await db.Goals.Where(g => g.Ano == baseMonth.Year && g.Mes == baseMonth.Month).ToListAsync();
-        var goalsVm = new List<GoalProgressItem>();
-        if (goals.Count > 0)
-        {
-            foreach (var g in goals)
+            // Atualiza séries do gráfico de pizza
+            var pie = porCat.Select(s => new PieSeries<double>
             {
-                var spent = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId == g.CategoryId).Sum(t => t.Valor);
-                var name = categories.TryGetValue(g.CategoryId, out var cat) ? cat.Nome : $"Cat {g.CategoryId}";
-                goalsVm.Add(new GoalProgressItem { CategoryName = name, Limit = g.LimiteMensal, Spent = spent });
+                Name = s.Name,
+                Values = new[] { (double)s.Total },
+                Fill = new SolidColorPaint(SKColor.Parse(s.ColorHex))
+            }).Cast<ISeries>().ToArray();
+            PieSeries = pie;
+
+            // Saldos por conta (Otimizado)
+            // Recupera somatórios por conta no período
+            var accountSums = await db.Transactions
+                .Where(t => t.Data >= from && t.Data < toExclusive)
+                .GroupBy(t => t.AccountId)
+                .Select(g => new
+                {
+                    AccountId = g.Key,
+                    Receitas = g.Where(t => t.Tipo == TransactionType.Receita).Sum(t => (double)t.Valor),
+                    Despesas = g.Where(t => t.Tipo == TransactionType.Despesa).Sum(t => (double)t.Valor),
+                    TransfOut = g.Where(t => t.Tipo == TransactionType.Transferencia).Sum(t => (double)t.Valor)
+                })
+                .ToDictionaryAsync(k => k.AccountId);
+
+            // Recupera transferências de entrada (baseado em OpostoAccountId)
+            var transfInSums = await db.Transactions
+                .Where(t => t.Data >= from && t.Data < toExclusive && t.Tipo == TransactionType.Transferencia && t.OpostoAccountId != null)
+                .GroupBy(t => t.OpostoAccountId!.Value)
+                .Select(g => new { AccountId = g.Key, Total = g.Sum(t => (double)t.Valor) })
+                .ToDictionaryAsync(k => k.AccountId);
+
+            var accounts = await db.Accounts.ToListAsync();
+            var balances = new List<AccountBalanceItem>();
+            foreach (var acc in accounts)
+            {
+                var sums = accountSums.TryGetValue(acc.Id, out var s) ? s : null;
+                var rec = (decimal)(sums?.Receitas ?? 0);
+                var desp = (decimal)(sums?.Despesas ?? 0);
+                var tOut = (decimal)(sums?.TransfOut ?? 0);
+                var tIn = (decimal)(transfInSums.TryGetValue(acc.Id, out var ti) ? ti.Total : 0);
+                
+                var saldo = acc.SaldoInicial + rec - desp - tOut + tIn;
+                balances.Add(new AccountBalanceItem { AccountName = acc.Nome, Balance = saldo });
             }
-        }
-        else
-        {
-            var catLimits = await db.Categories.Where(c => c.LimiteMensal != null && c.LimiteMensal > 0).ToListAsync();
-            foreach (var c in catLimits)
+            AccountBalances = new ObservableCollection<AccountBalanceItem>(balances.OrderByDescending(b => b.Balance));
+
+            // Metas do mês (usa FilterFrom para ano/mês)
+            var baseMonth = new DateTime((FilterFrom ?? firstDay).Year, (FilterFrom ?? firstDay).Month, 1);
+            var goals = await db.Goals.Where(g => g.Ano == baseMonth.Year && g.Mes == baseMonth.Month).ToListAsync();
+            
+            // Prepara dicionário de gastos por categoria para verificar metas
+            var expenseByCatDict = catExpensesList.ToDictionary(x => x.CatId, x => x.Total);
+
+            var goalsVm = new List<GoalProgressItem>();
+            if (goals.Count > 0)
             {
-                var spent = txs.Where(t => t.Tipo == TransactionType.Despesa && t.CategoryId == c.Id).Sum(t => t.Valor);
-                goalsVm.Add(new GoalProgressItem { CategoryName = c.Nome, Limit = c.LimiteMensal!.Value, Spent = spent });
+                foreach (var g in goals)
+                {
+                    var spent = expenseByCatDict.TryGetValue(g.CategoryId, out var val) ? val : 0;
+                    var name = categories.TryGetValue(g.CategoryId, out var cat) ? cat.Nome : $"Cat {g.CategoryId}";
+                    goalsVm.Add(new GoalProgressItem { CategoryName = name, Limit = g.LimiteMensal, Spent = (decimal)spent });
+                }
             }
+            else
+            {
+                var catLimits = await db.Categories.Where(c => c.LimiteMensal != null && c.LimiteMensal > 0).ToListAsync();
+                foreach (var c in catLimits)
+                {
+                    var spent = expenseByCatDict.TryGetValue(c.Id, out var val) ? val : 0;
+                    goalsVm.Add(new GoalProgressItem { CategoryName = c.Nome, Limit = c.LimiteMensal!.Value, Spent = (decimal)spent });
+                }
+            }
+            GoalsProgress = new ObservableCollection<GoalProgressItem>(goalsVm.OrderByDescending(x => x.Percent));
+
+            // Atualiza histórico de patrimônio
+            UpdateNetWorthSeries(12);
+            
+            await LoadRecentAsync();
         }
-        GoalsProgress = new ObservableCollection<GoalProgressItem>(goalsVm.OrderByDescending(x => x.Percent));
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private ObservableCollection<TransactionItem> _recentTransactions = new();
@@ -228,34 +306,10 @@ public sealed partial class DashboardViewModel : ObservableObject
     public void UpdateNetWorthSeries(int months)
     {
         List<ReportService.NetWorthPoint> points;
-        if (_reportService is not null)
-        {
-            points = _reportService.GetNetWorthHistory(months);
-        }
-        else
-        {
-            using var db = new CoinCraftDbContext();
-            var endDate = DateTime.Today;
-            var lastMonthEnd = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
-            var accounts = db.Accounts.AsNoTracking().ToList();
-            points = new List<ReportService.NetWorthPoint>();
-            for (int i = months - 1; i >= 0; i--)
-            {
-                var periodEnd = lastMonthEnd.AddMonths(-i);
-                var txs = db.Transactions.AsNoTracking().Where(t => t.Data <= periodEnd).ToList();
-                decimal netWorth = 0m;
-                foreach (var acc in accounts)
-                {
-                    var receitas = txs.Where(t => t.Tipo == TransactionType.Receita && t.AccountId == acc.Id).Sum(t => t.Valor);
-                    var despesas = txs.Where(t => t.Tipo == TransactionType.Despesa && t.AccountId == acc.Id).Sum(t => t.Valor);
-                    var transfOut = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.AccountId == acc.Id).Sum(t => t.Valor);
-                    var transfIn = txs.Where(t => t.Tipo == TransactionType.Transferencia && t.OpostoAccountId == acc.Id).Sum(t => t.Valor);
-                    var saldo = acc.SaldoInicial + receitas - despesas - transfOut + transfIn;
-                    netWorth += saldo;
-                }
-                points.Add(new ReportService.NetWorthPoint { Year = periodEnd.Year, Month = periodEnd.Month, NetWorth = netWorth });
-            }
-        }
+        // Usa o serviço injetado ou cria uma instância temporária para garantir a lógica otimizada
+        var reportService = _reportService ?? new ReportService();
+        points = reportService.GetNetWorthHistory(months);
+
         if (points is null || points.Count == 0)
         {
             NetWorthSeries = Array.Empty<ISeries>();
@@ -334,7 +388,7 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public async Task LoadRecentAsync()
     {
-        using var db = new CoinCraftDbContext();
+        using var db = _contextFactory();
         var from = FilterFrom ?? DateTime.Today.AddDays(-30);
         var to = FilterTo ?? DateTime.Today;
         var accounts = await db.Accounts.ToDictionaryAsync(a => a.Id, a => a.Nome);
