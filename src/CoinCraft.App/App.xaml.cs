@@ -167,36 +167,32 @@ public partial class App : Application
         var validRes = await licensing.ValidateExistingAsync();
         if (!validRes.IsValid)
         {
-            // Fluxo de ativação: Escolha de método
-            var httpClient = Services!.GetRequiredService<HttpClient>();
-            var activationVm = new CoinCraft.App.ViewModels.ActivationMethodViewModel(licensing, httpClient);
-            var activationWin = new CoinCraft.App.Views.ActivationMethodWindow(activationVm);
-            
-            var actResult = activationWin.ShowDialog();
+            // Fluxo de ativação via E-mail (Novo Requisito)
+            var emailWin = new CoinCraft.App.Views.EmailPromptWindow();
+            var result = emailWin.ShowDialog();
 
-            // 1. Se ativou via email (DialogResult=true) e estado Active
-            if (actResult == true && licensing.CurrentState == LicenseState.Active)
+            if (result == true && emailWin.IsVerified && !string.IsNullOrEmpty(emailWin.LicenseKey))
             {
-                // Segue o fluxo normal para abrir Dashboard
-            }
-            // 2. Se usuário pediu modo Offline (Tag="Offline")
-            else if (activationWin.Tag?.ToString() == "Offline")
-            {
-                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
-                var owner = Application.Current.MainWindow;
-                // Define owner apenas se houver alguma janela principal visível que não seja ela mesma
-                if (owner != null && !ReferenceEquals(owner, licWin) && owner.IsVisible) 
-                    licWin.Owner = owner;
-                
-                var ok = licWin.ShowDialog();
-                var activated = ok.HasValue && ok.Value && licensing.CurrentState == LicenseState.Active;
-                if (!activated)
+                // Criar license.dat
+                var fingerprint = CoinCraft.Services.Licensing.HardwareHelper.ComputeHardwareId();
+                var record = new CoinCraft.Services.Licensing.InstallationRecord
                 {
-                    Shutdown();
-                    return;
+                    LicenseKey = emailWin.LicenseKey!,
+                    MachineFingerprint = fingerprint,
+                    InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
+                    Notes = $"Activated via email: {emailWin.Email}"
+                };
+                CoinCraft.Services.Licensing.LicensingStorage.Save(record);
+
+                // Revalidar para atualizar estado do serviço
+                await licensing.ValidateExistingAsync();
+                if (licensing.CurrentState != LicenseState.Active)
+                {
+                     MessageBox.Show("Licença salva mas validação interna falhou.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                     Shutdown();
+                     return;
                 }
             }
-            // 3. Cancelou ou fechou
             else
             {
                 Shutdown();

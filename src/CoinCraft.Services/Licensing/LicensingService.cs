@@ -18,9 +18,9 @@ namespace CoinCraft.Services.Licensing
         string CurrentFingerprint { get; }
     }
 
-    internal sealed class LicensingStorage
+    public sealed class LicensingStorage
     {
-        private static string StoragePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft", "license.dat");
+        public static string StoragePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft", "license.dat");
 
         public static void Save(InstallationRecord record)
         {
@@ -57,7 +57,7 @@ namespace CoinCraft.Services.Licensing
         public LicensingService(ILicenseApiClient apiClient)
         {
             _apiClient = apiClient;
-            _fingerprint = MachineIdProvider.ComputeFingerprint();
+            _fingerprint = HardwareHelper.ComputeHardwareId();
             _timer = new Timer(async _ => await PeriodicValidateAsync(), null, Timeout.Infinite, Timeout.Infinite);
         }
 
