@@ -7,3 +7,9 @@ publish_final/
 dist/
 *.pdb
 private.xml
+
+*.exe
+
+admin_publish/
+scripts/
+installer/
