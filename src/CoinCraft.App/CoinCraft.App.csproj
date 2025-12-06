@@ -27,6 +27,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="coincraft.ico" />
+    <Content Include="coincraft.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="public.xml">
