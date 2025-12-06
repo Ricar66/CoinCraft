@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using CoinCraft.Services.Licensing;
 using System;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -13,9 +12,10 @@ namespace CoinCraft.App.ViewModels
     {
         private readonly ILicensingService _licensingService;
         private readonly HttpClient _httpClient;
+        
+        // Mantido para compatibilidade, embora não usado diretamente aqui
         private const string ApiUrl = "https://codecraftgenz.com.br/";
 
-        // IsEmailMode is no longer needed as logic is direct, but keeping for compatibility if View still binds (removed in XAML)
         [ObservableProperty]
         private bool _isEmailMode = true;
 
@@ -68,49 +68,42 @@ namespace CoinCraft.App.ViewModels
 
             try
             {
-                var hardwareId = MachineIdProvider.ComputeFingerprint();
-                var payload = new { email = Email, hardwareId = hardwareId };
-
-                var response = await _httpClient.PostAsJsonAsync(ApiUrl, payload);
-
-                if (response.IsSuccessStatusCode)
+                var hwId = HardwareHelper.GetHardwareId();
+                var svc = new LicenseService();
+                
+                // 1. Tenta verificar diretamente
+                var verifyResult = await svc.VerifyLicenseAsync(Email, hwId);
+                
+                if (verifyResult.Success)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<ActivationResponse>();
-                    if (result != null && !string.IsNullOrEmpty(result.LicenseKey))
+                    await FinishActivation(verifyResult.LicenseKey);
+                    return;
+                }
+
+                // 2. Se falhar por limite (LICENSE_LIMIT), tentamos o fluxo de Claim
+                if (verifyResult.Code == "LICENSE_LIMIT")
+                {
+                    StatusMessage = "Limite atingido. Tentando ativar nova licença...";
+                    var claimedKey = await svc.ClaimByEmailAsync(Email, hwId);
+                    
+                    if (!string.IsNullOrEmpty(claimedKey))
                     {
-                        var licenseResult = await _licensingService.EnsureLicensedAsync(() => Task.FromResult<string?>(result.LicenseKey));
-                        
-                        if (licenseResult.IsValid)
+                        // Se conseguiu reivindicar, verificamos novamente para confirmar
+                        var retry = await svc.VerifyLicenseAsync(Email, hwId);
+                        if (retry.Success)
                         {
-                            StatusMessage = "Ativado com sucesso!";
-                            foreach (Window window in Application.Current.Windows)
-                            {
-                                if (window is Views.ActivationMethodWindow activationWindow)
-                                {
-                                    activationWindow.DialogResult = true;
-                                    activationWindow.Close();
-                                }
-                            }
-                        }
-                        else
-                        {
-                            StatusMessage = "Chave recebida, mas inválida localmente.";
+                            await FinishActivation(claimedKey);
+                            return;
                         }
                     }
                     else
                     {
-                        StatusMessage = "Resposta inválida do servidor.";
+                        StatusMessage = "Limite de ativações atingido ou compra não encontrada. Use 'Tenho uma chave' ou compre uma nova licença.";
                     }
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict) // 409
-                {
-                    StatusMessage = string.Empty; // Limpa mensagem de status anterior
-                    MessageBox.Show("Identificamos que este computador já tem uma licença! Por favor, use a opção manual e cole sua chave antiga.", "Licença Existente", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 else
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    StatusMessage = !string.IsNullOrWhiteSpace(errorContent) ? errorContent : $"Erro no servidor: {response.StatusCode}";
+                    StatusMessage = verifyResult.Message ?? "Licença não encontrada ou inválida.";
                 }
             }
             catch (Exception ex)
@@ -123,9 +116,47 @@ namespace CoinCraft.App.ViewModels
             }
         }
 
-        private class ActivationResponse
+        private async Task FinishActivation(string? licenseKey)
         {
-            public string LicenseKey { get; set; } = string.Empty;
+            // Salvar e-mail localmente
+            try
+            {
+                var emailFile = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft", "license.dat");
+                var dir = System.IO.Path.GetDirectoryName(emailFile)!;
+                if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
+                System.IO.File.WriteAllText(emailFile, Email);
+            }
+            catch { }
+
+            // Salvar chave de licença se disponível (usando o sistema seguro existente)
+            if (!string.IsNullOrEmpty(licenseKey))
+            {
+                var hwId = HardwareHelper.GetHardwareId();
+                var record = new InstallationRecord
+                {
+                    LicenseKey = licenseKey,
+                    MachineFingerprint = hwId,
+                    InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
+                    Notes = $"Activated via email: {Email}"
+                };
+                LicensingStorage.Save(record);
+                
+                // Tenta revalidar o serviço principal para atualizar o estado da aplicação
+                await _licensingService.ValidateExistingAsync();
+            }
+
+            StatusMessage = "Licença válida neste dispositivo.";
+            await Task.Delay(1000); // Breve pausa para o usuário ler
+
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window is Views.ActivationMethodWindow activationWindow)
+                {
+                    activationWindow.Tag = "EmailSuccess";
+                    activationWindow.DialogResult = true;
+                    activationWindow.Close();
+                }
+            }
         }
     }
 }

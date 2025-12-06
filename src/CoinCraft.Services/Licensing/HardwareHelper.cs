@@ -42,5 +42,10 @@ namespace CoinCraft.Services.Licensing
             var composite = $"PROC={processorId};MB={motherboardSerial}";
             return CryptoHelper.ComputeSha256(composite);
         }
+
+        public static string GetHardwareId()
+        {
+            return ComputeHardwareId();
+        }
     }
 }

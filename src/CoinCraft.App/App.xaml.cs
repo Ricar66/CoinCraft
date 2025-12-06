@@ -63,6 +63,8 @@ public partial class App : Application
         }
         catch { }
 
+        // Removido prompt direto de e-mail para manter a tela antiga com duas opções
+
         try
         {
             _singleInstanceMutex = new Mutex(true, "CoinCraft.App.Singleton", out bool createdNew);
@@ -167,30 +169,33 @@ public partial class App : Application
         var validRes = await licensing.ValidateExistingAsync();
         if (!validRes.IsValid)
         {
-            // Fluxo de ativação via E-mail (Novo Requisito)
-            var emailWin = new CoinCraft.App.Views.EmailPromptWindow();
-            var result = emailWin.ShowDialog();
+            var httpClient = Services!.GetRequiredService<HttpClient>();
+            var vm = new CoinCraft.App.ViewModels.ActivationMethodViewModel(licensing, httpClient);
+            var activationWin = new CoinCraft.App.Views.ActivationMethodWindow(vm);
+            var dialogResult = activationWin.ShowDialog();
 
-            if (result == true && emailWin.IsVerified && !string.IsNullOrEmpty(emailWin.LicenseKey))
+            if (dialogResult == true)
             {
-                // Criar license.dat
-                var fingerprint = CoinCraft.Services.Licensing.HardwareHelper.ComputeHardwareId();
-                var record = new CoinCraft.Services.Licensing.InstallationRecord
+                if (Equals(activationWin.Tag, "EmailSuccess"))
                 {
-                    LicenseKey = emailWin.LicenseKey!,
-                    MachineFingerprint = fingerprint,
-                    InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
-                    Notes = $"Activated via email: {emailWin.Email}"
-                };
-                CoinCraft.Services.Licensing.LicensingStorage.Save(record);
-
-                // Revalidar para atualizar estado do serviço
-                await licensing.ValidateExistingAsync();
+                    // E-mail verificado e salvo; permitir continuar sem depender do estado interno de licença
+                }
+                else if (licensing.CurrentState != LicenseState.Active)
+                {
+                    MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Shutdown();
+                    return;
+                }
+            }
+            else if (Equals(activationWin.Tag, "Offline"))
+            {
+                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
+                var ok = licWin.ShowDialog();
                 if (licensing.CurrentState != LicenseState.Active)
                 {
-                     MessageBox.Show("Licença salva mas validação interna falhou.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                     Shutdown();
-                     return;
+                    MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Shutdown();
+                    return;
                 }
             }
             else
@@ -292,5 +297,41 @@ public partial class App : Application
             var present = Application.Current.Resources.Contains(k);
             log.Info($"Resource {k}: {(present ? "OK" : "MISSING")}");
         }
+    }
+
+    private string? PromptEmail()
+    {
+        var win = new Window
+        {
+            Title = "Email",
+            Width = 360,
+            Height = 160,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            ResizeMode = ResizeMode.NoResize,
+            Background = System.Windows.Media.Brushes.White
+        };
+        var grid = new System.Windows.Controls.Grid { Margin = new Thickness(16) };
+        grid.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new System.Windows.Controls.RowDefinition { Height = GridLength.Auto });
+        var label = new System.Windows.Controls.TextBlock { Text = "Informe seu e-mail", Margin = new Thickness(0, 0, 0, 8) };
+        var box = new System.Windows.Controls.TextBox { Margin = new Thickness(0, 0, 0, 12) };
+        var panel = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var okBtn = new System.Windows.Controls.Button { Content = "OK", Width = 80, Margin = new Thickness(0, 0, 8, 0) };
+        var cancelBtn = new System.Windows.Controls.Button { Content = "Cancelar", Width = 80 };
+        okBtn.Click += (_, __) => { win.DialogResult = true; win.Close(); };
+        cancelBtn.Click += (_, __) => { win.DialogResult = false; win.Close(); };
+        panel.Children.Add(okBtn);
+        panel.Children.Add(cancelBtn);
+        System.Windows.Controls.Grid.SetRow(label, 0);
+        System.Windows.Controls.Grid.SetRow(box, 1);
+        System.Windows.Controls.Grid.SetRow(panel, 2);
+        grid.Children.Add(label);
+        grid.Children.Add(box);
+        grid.Children.Add(panel);
+        win.Content = grid;
+        var r = win.ShowDialog();
+        if (r == true) return box.Text.Trim();
+        return null;
     }
 }

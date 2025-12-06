@@ -70,13 +70,9 @@
 
             <TextBlock Text="{Binding SelectedSection.Title}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,16"/>
 
-            <!-- Image Placeholder -->
-            <Border Grid.Row="1" Background="#F0F0F0" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4" Margin="0,0,0,16" Height="200" 
-                    Visibility="{Binding SelectedSection.ImagePlaceholder, Converter={StaticResource NullToVisibilityConverter}}">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="📷" FontSize="32" HorizontalAlignment="Center" Foreground="#999999"/>
-                    <TextBlock Text="{Binding SelectedSection.ImagePlaceholder}" FontSize="14" Foreground="#666666" HorizontalAlignment="Center" Margin="0,8,0,0" FontStyle="Italic"/>
-                </StackPanel>
+            <!-- Image Area -->
+            <Border Grid.Row="1" Background="#F0F0F0" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4" Margin="0,0,0,16" Height="200">
+                <Image Source="{Binding SelectedSection.ImagePath}" Stretch="Uniform"/>
             </Border>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">

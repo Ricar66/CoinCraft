@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="goldGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#FFF096;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#DAA520;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="250" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="16" />
+  <circle cx="256" cy="256" r="210" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4" />
+  <text x="50%" y="50%" font-family="Segoe UI, Arial" font-weight="bold" font-size="300" fill="#006400" text-anchor="middle" dy="0.35em" filter="drop-shadow(4px 4px 4px rgba(0,0,0,0.2))">$</text>
+</svg>

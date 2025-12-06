@@ -7,7 +7,8 @@ public class ManualSection
 {
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
-    public string? ImagePlaceholder { get; set; } // Descrição do que seria a imagem
+    public string? ImagePlaceholder { get; set; }
+    public string? ImagePath { get; set; }
 }
 
 public partial class ManualViewModel : ObservableObject
@@ -28,7 +29,8 @@ public partial class ManualViewModel : ObservableObject
                 Content = "Bem-vindo ao CoinCraft!\n\nO CoinCraft é um sistema completo para gestão financeira pessoal. " +
                           "Com ele, você pode controlar suas receitas, despesas, contas bancárias, cartões de crédito e planejar seu futuro financeiro.\n\n" +
                           "Navegue pelos tópicos ao lado para aprender como utilizar cada funcionalidade do sistema.",
-                ImagePlaceholder = "Imagem: Tela Inicial do Dashboard com gráficos e resumos"
+                ImagePlaceholder = "Imagem: Tela Inicial do Dashboard com gráficos e resumos",
+                ImagePath = "pack://application:,,,/Images/Help/section1.png"
             },
             new ManualSection 
             { 
@@ -40,7 +42,8 @@ public partial class ManualViewModel : ObservableObject
                           "- Histórico de Patrimônio: Acompanhe a evolução do seu patrimônio nos últimos 12 meses.\n" +
                           "- Metas do Mês: Acompanhe o progresso das suas metas de gastos.\n\n" +
                           "Dica: Use os filtros de data no topo da tela para visualizar períodos específicos.",
-                ImagePlaceholder = "Imagem: Gráficos de pizza e barras do Dashboard"
+                ImagePlaceholder = "Imagem: Gráficos de pizza e barras do Dashboard",
+                ImagePath = "pack://application:,,,/Images/Help/section2.png"
             },
             new ManualSection 
             { 
@@ -55,7 +58,8 @@ public partial class ManualViewModel : ObservableObject
                           "6. Defina o Tipo (Receita, Despesa ou Transferência).\n" +
                           "7. Clique em 'Salvar'.\n\n" +
                           "Você também pode editar ou excluir lançamentos selecionando-os na lista e usando os botões correspondentes.",
-                ImagePlaceholder = "Imagem: Formulário de cadastro de transação"
+                ImagePlaceholder = "Imagem: Formulário de cadastro de transação",
+                ImagePath = "pack://application:,,,/Images/Help/section3.png"
             },
             new ManualSection 
             { 
@@ -64,7 +68,8 @@ public partial class ManualViewModel : ObservableObject
                           "- Adicionar Conta: Clique em '+ Nova Conta', dê um nome (ex: 'Nubank', 'Carteira') e defina um saldo inicial.\n" +
                           "- Saldo Inicial: É o valor que você tinha na conta antes de começar a usar o CoinCraft.\n\n" +
                           "Manter suas contas atualizadas é fundamental para que o saldo do sistema bata com a realidade.",
-                ImagePlaceholder = "Imagem: Lista de contas cadastradas"
+                ImagePlaceholder = "Imagem: Lista de contas cadastradas",
+                ImagePath = "pack://application:,,,/Images/Help/section4.png"
             },
             new ManualSection 
             { 
@@ -73,7 +78,8 @@ public partial class ManualViewModel : ObservableObject
                           "- O sistema já vem com categorias padrão (Alimentação, Transporte, Lazer, etc.).\n" +
                           "- Você pode criar novas categorias clicando em 'Nova Categoria'.\n" +
                           "- Defina limites mensais para cada categoria para ajudar no controle do orçamento (aparecerá no Dashboard).",
-                ImagePlaceholder = "Imagem: Lista de categorias com ícones e cores"
+                ImagePlaceholder = "Imagem: Lista de categorias com ícones e cores",
+                ImagePath = "pack://application:,,,/Images/Help/section5.png"
             },
             new ManualSection 
             { 
@@ -84,7 +90,8 @@ public partial class ManualViewModel : ObservableObject
                           "2. Defina a frequência (Mensal, Semanal, etc.).\n" +
                           "3. Escolha se o lançamento deve ser automático (o sistema cria sozinho no dia) ou manual (o sistema avisa e você confirma).\n" +
                           "4. Defina o dia de vencimento.",
-                ImagePlaceholder = "Imagem: Tela de configuração de transação recorrente"
+                ImagePlaceholder = "Imagem: Tela de configuração de transação recorrente",
+                ImagePath = "pack://application:,,,/Images/Help/section6.png"
             },
             new ManualSection 
             { 
@@ -94,7 +101,8 @@ public partial class ManualViewModel : ObservableObject
                           "2. Selecione o arquivo no seu computador.\n" +
                           "3. O sistema tentará identificar as colunas automaticamente.\n" +
                           "4. Revise os lançamentos antes de confirmar a importação.",
-                ImagePlaceholder = "Imagem: Tela de pré-visualização de importação"
+                ImagePlaceholder = "Imagem: Tela de pré-visualização de importação",
+                ImagePath = "pack://application:,,,/Images/Help/section7.png"
             },
             new ManualSection 
             { 
@@ -108,7 +116,8 @@ public partial class ManualViewModel : ObservableObject
                           "Cenário 2: Pagamento de Cartão de Crédito\n" +
                           "- Se você controla o cartão como uma conta separada, faça uma Transferência da sua Conta Corrente para a Conta Cartão.\n" +
                           "- Se não, lance como Despesa na Categoria 'Pagamento de Cartão'.",
-                ImagePlaceholder = "Imagem: Exemplo de lançamento preenchido"
+                ImagePlaceholder = "Imagem: Exemplo de lançamento preenchido",
+                ImagePath = "pack://application:,,,/Images/Help/section8.png"
             },
             new ManualSection 
             { 
@@ -119,7 +128,8 @@ public partial class ManualViewModel : ObservableObject
                           "R: Sim! O CoinCraft é 100% offline e local. Seus dados ficam apenas no seu computador.\n\n" +
                           "P: Posso usar em mais de um computador?\n" +
                           "R: Atualmente o sistema é local. Para usar em outro PC, você precisaria copiar o arquivo de banco de dados manualmente.",
-                ImagePlaceholder = "Imagem: Ícone de dúvida ou suporte"
+                ImagePlaceholder = "Imagem: Ícone de dúvida ou suporte",
+                ImagePath = "pack://application:,,,/Images/Help/section9.png"
             },
             new ManualSection 
             { 
@@ -129,7 +139,8 @@ public partial class ManualViewModel : ObservableObject
                           "- Transferência: Movimentação entre duas contas suas (ex: sacar dinheiro, pagar fatura de cartão).\n" +
                           "- Recorrente: Lançamento que se repete periodicamente.\n" +
                           "- Conciliação: Ato de conferir se o saldo no CoinCraft bate com o saldo real do banco.",
-                ImagePlaceholder = "Imagem: Lista de termos"
+                ImagePlaceholder = "Imagem: Lista de termos",
+                ImagePath = "pack://application:,,,/Images/Help/section10.png"
             }
         };
         
