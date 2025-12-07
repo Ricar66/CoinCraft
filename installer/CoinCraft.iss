@@ -58,9 +58,7 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFile
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\coincraft.ico"
 
 [Run]
-; Executa instalação via Winget se runtime estiver ausente (fallback abre página de download)
-Filename: "winget"; Parameters: "install --id Microsoft.DotNet.DesktopRuntime.8 --source winget --silent --accept-package-agreements --accept-source-agreements"; StatusMsg: "Instalando .NET Desktop Runtime 8.0..."; Flags: runhidden waituntilterminated; Check: (not HasWinDesktopRuntime80())
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall skipifsilent; Check: HasWinDesktopRuntime80
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall skipifsilent
 
 [Code]
 function IsForceX86(): Boolean;
@@ -78,37 +76,68 @@ begin
   Result := (not IsWin64) or IsForceX86;
 end;
 
-function HasWinDesktopRuntime80(): Boolean;
-var SubKeys: TArrayOfString;
+function GetDotnetDesktop80UrlX64(): String;
+begin
+  Result := 'https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-8.0-windows-x64-installer';
+end;
+
+function GetDotnetDesktop80UrlX86(): String;
+begin
+  Result := 'https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-8.0-windows-x86-installer';
+end;
+
+function HasDotnetDesktop80Arch(ArchKey: Integer; ArchName: String): Boolean;
+var baseKey: String;
+    names: TArrayOfString;
     i: Integer;
-    KeyPath: String;
 begin
   Result := False;
-  if IsWin64 then
-    KeyPath := 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App'
-  else
-    KeyPath := 'SOFTWARE\dotnet\Setup\InstalledVersions\x86\sharedfx\Microsoft.WindowsDesktop.App';
-
-  if RegGetSubkeyNames(HKLM, KeyPath, SubKeys) then
+  baseKey := 'SOFTWARE\dotnet\Setup\InstalledVersions\' + ArchName + '\sharedfx\Microsoft.WindowsDesktop.App';
+  Log('Verificando ' + baseKey);
+  if RegGetSubkeyNames(ArchKey, baseKey, names) then
   begin
-    for i := 0 to GetArrayLength(SubKeys)-1 do
+    for i := 0 to GetArrayLength(names)-1 do
     begin
-      if Pos('8.0', SubKeys[i]) = 1 then
+      if Copy(names[i], 1, 3) = '8.0' then
       begin
+        Log('Encontrado subkey: ' + names[i]);
         Result := True;
         exit;
       end;
     end;
+  end
+  else
+  begin
+    Log('Chave ausente: ' + baseKey);
   end;
 end;
 
-procedure InitializeWizard;
+function HasDotnetDesktop80(): Boolean;
 var ok: Boolean;
-    err: Integer;
 begin
-  if not HasWinDesktopRuntime80() then
+  Log('Detectando .NET Desktop Runtime 8.0');
+  if IsWin64 then
   begin
-    MsgBox('O .NET Desktop Runtime 8.0 não foi detectado neste computador. O instalador abrirá a página oficial para download. Após instalar o runtime, execute novamente este instalador.', mbInformation, MB_OK);
-    ok := ShellExec('open', 'https://dotnet.microsoft.com/en-us/download/dotnet/8.0', '', '', SW_SHOWNORMAL, False, err);
+    ok := HasDotnetDesktop80Arch(HKLM64, 'x64');
+    if not ok then ok := HasDotnetDesktop80Arch(HKLM64, 'x86');
+  end
+  else
+  begin
+    ok := HasDotnetDesktop80Arch(HKLM32, 'x86');
   end;
+  if ok then
+    Log('Runtime 8.0 presente')
+  else
+  begin
+    Log('Runtime 8.0 não encontrado');
+    Log('Referência x64: ' + GetDotnetDesktop80UrlX64());
+    Log('Referência x86: ' + GetDotnetDesktop80UrlX86());
+  end;
+  Result := ok;
+end;
+
+procedure InitializeWizard;
+begin
+  Log('Inicialização do instalador');
+  HasDotnetDesktop80();
 end;
