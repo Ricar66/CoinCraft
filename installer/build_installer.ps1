@@ -33,8 +33,8 @@ New-Item -ItemType Directory -Force -Path $publishDirX64 | Out-Null
 $oldX86 = "$projectRoot\publish_final_x86"
 $oldX64 = "$projectRoot\publish_final_x64"
 
-dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
-dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+36→dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 --self-contained true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+37→dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 --self-contained true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
 
 
 if (-not (Test-Path "$publishDirX86\CoinCraft.App.exe")) { Write-Error "Falha na publicação x86. Executável não encontrado." }
