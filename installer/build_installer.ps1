@@ -34,8 +34,8 @@ New-Item -ItemType Directory -Force -Path $prereqDir | Out-Null
 # Pastas antigas (serão removidas se existirem)
 $oldX86 = "$projectRoot\publish_final_x86"
 $oldX64 = "$projectRoot\publish_final_x64"
-dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
-dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 --self-contained true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 --self-contained true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
 
 
 if (-not (Test-Path "$publishDirX86\CoinCraft.App.exe")) { Write-Error "Falha na publicação x86. Executável não encontrado." }
@@ -54,7 +54,8 @@ function Get-DesktopRuntime($arch) {
     $thankYouUrl = "https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-8.0-windows-$arch-installer"
     try {
         $html = Invoke-WebRequest -Uri $thankYouUrl -UseBasicParsing -ErrorAction Stop
-        $matches = [regex]::Matches($html.Content, "https?://[^"]*windowsdesktop-runtime-8\.0[^"]*win-$arch\.exe")
+        $pattern = 'https?://[^"]*windowsdesktop-runtime-8\.0[^"]*win-{0}\.exe' -f $arch
+        $matches = [regex]::Matches($html.Content, $pattern)
         if ($matches.Count -gt 0) { return $matches[0].Value }
     } catch { }
     return $null
@@ -99,7 +100,10 @@ if (-not (Get-Command $iscc -ErrorAction SilentlyContinue) -and -not (Test-Path 
     exit 1
 }
 
-& $iscc "$installerDir\CoinCraft.iss" | Out-Null
+$defines = @()
+if ($rtX64) { $defines += "/DIncludePrereqsX64=1" }
+if ($rtX86) { $defines += "/DIncludePrereqsX86=1" }
+& $iscc "$installerDir\CoinCraft.iss" $defines | Out-Null
 
 # 4. Validação Final
 if (Test-Path $outputExe) {
