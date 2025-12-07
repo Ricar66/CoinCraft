@@ -5,6 +5,7 @@ $ErrorActionPreference = "Stop"
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $projectRoot = "$scriptPath\.."
 $installerDir = $scriptPath
+$prereqDir = "$installerDir\Prereqs"
 $publishUnified = "$projectRoot\publish_final"
 $publishDirX86 = "$publishUnified\x86"
 $publishDirX64 = "$publishUnified\x64"
@@ -28,13 +29,13 @@ Write-Host "2. Publicando aplicação .NET e unificando estrutura..."
 if (Test-Path $publishUnified) { Remove-Item $publishUnified -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $publishDirX86 | Out-Null
 New-Item -ItemType Directory -Force -Path $publishDirX64 | Out-Null
+New-Item -ItemType Directory -Force -Path $prereqDir | Out-Null
 
 # Pastas antigas (serão removidas se existirem)
 $oldX86 = "$projectRoot\publish_final_x86"
 $oldX64 = "$projectRoot\publish_final_x64"
-
-36→dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 --self-contained true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
-37→dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 --self-contained true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
 
 
 if (-not (Test-Path "$publishDirX86\CoinCraft.App.exe")) { Write-Error "Falha na publicação x86. Executável não encontrado." }
@@ -47,6 +48,33 @@ foreach ($d in @($publishDirX86, $publishDirX64)) {
         Copy-Item "$projectRoot\src\CoinCraft.App\public.xml" "$d\public.xml" -Force
     }
 }
+
+# 2.1. Pré-requisitos: baixar .NET Desktop Runtime 8.0 (x64/x86) para incluir no instalador
+function Get-DesktopRuntime($arch) {
+    $thankYouUrl = "https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-8.0-windows-$arch-installer"
+    try {
+        $html = Invoke-WebRequest -Uri $thankYouUrl -UseBasicParsing -ErrorAction Stop
+        $matches = [regex]::Matches($html.Content, "https?://[^"]*windowsdesktop-runtime-8\.0[^"]*win-$arch\.exe")
+        if ($matches.Count -gt 0) { return $matches[0].Value }
+    } catch { }
+    return $null
+}
+
+function Ensure-DesktopRuntime($arch) {
+    $target = Join-Path $prereqDir "windowsdesktop-runtime-8.0-$arch.exe"
+    if (Test-Path $target) { return $target }
+    $url = Get-DesktopRuntime $arch
+    if ($null -eq $url) {
+        Write-Warning "Não foi possível resolver URL do runtime .NET Desktop 8.0 ($arch). O instalador irá registrar em log a referência oficial."
+        return $null
+    }
+    Write-Host "   Baixando runtime .NET Desktop 8.0 ($arch)..." -ForegroundColor Cyan
+    Invoke-WebRequest -Uri $url -OutFile $target -UseBasicParsing
+    return $target
+}
+
+$rtX64 = Ensure-DesktopRuntime "x64"
+$rtX86 = Ensure-DesktopRuntime "x86"
 
 # 3. Compilação do Instalador (Inno Setup)
 Write-Host "3. Compilando Instalador com Inno Setup..."
