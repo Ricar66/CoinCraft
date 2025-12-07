@@ -1,10 +1,11 @@
 ; Script gerado para o Inno Setup
 ; O nome do aplicativo é definido aqui
 #define MyAppName "CoinCraft"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "CodeCraftGenz"
 #define MyAppURL "https://www.codecraftgenz.com.br/"
 #define MyAppExeName "CoinCraft.App.exe"
+#define MyAppCopyright "Copyright (C) 2025 CodeCraftGenz"
 
 [Setup]
 ; Este GUID deve ser único para o seu app. Se quiser gerar um novo, use o menu Tools -> Generate GUID do Inno Setup
@@ -22,12 +23,19 @@ DisableProgramGroupPage=yes
 SetupMutex=CoinCraftSetupMutex
 ; Local onde o instalador final será salvo (pasta Output na raiz ou onde você preferir)
 OutputDir=.
-OutputBaseFilename=CoinCraftSetup_v3
-Compression=lzma
+OutputBaseFilename=SetupCoinCraft
+Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=coincraft.ico
 UninstallDisplayIcon={app}\coincraft.ico
+AppCopyright={#MyAppCopyright}
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription=Instalador do CoinCraft
+VersionInfoCopyright={#MyAppCopyright}
+VersionInfoProductName={#MyAppName}
+PrivilegesRequired=lowest
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -36,7 +44,7 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; ATENÇÃO: Aqui ele busca os arquivos que você gerou com o comando 'dotnet publish'
+; ATENÇÃO: Aqui ele busca os arquivos que você gerou com o comando 'dotnet publish' para x86 (Universal)
 Source: "..\publish_final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

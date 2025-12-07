@@ -20,6 +20,7 @@ namespace CoinCraft.Services.Licensing
     public sealed class InstallationRecord
     {
         public string LicenseKey { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public string MachineFingerprint { get; set; } = string.Empty;
         public string InstalledAtIso8601 { get; set; } = string.Empty;
         public string? Notes { get; set; }

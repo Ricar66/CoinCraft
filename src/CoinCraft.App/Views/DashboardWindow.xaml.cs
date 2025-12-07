@@ -104,45 +104,38 @@ public partial class DashboardWindow : Window
 
     private void OnGoTransactions(object sender, RoutedEventArgs e)
     {
-        var win = new TransactionsWindow { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new TransactionsWindow { Owner = this });
     }
 
     private void OnGoAccounts(object sender, RoutedEventArgs e)
     {
-        var win = new AccountsWindow { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new AccountsWindow { Owner = this });
     }
 
     private void OnGoCategories(object sender, RoutedEventArgs e)
     {
-        var win = new CategoriesWindow { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new CategoriesWindow { Owner = this });
     }
 
     private void OnGoRecurring(object sender, RoutedEventArgs e)
     {
-        var win = new RecurringWindow { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new RecurringWindow { Owner = this });
     }
 
     private void OnGoImport(object sender, RoutedEventArgs e)
     {
-        var win = new ImportWindow { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new ImportWindow { Owner = this });
     }
 
     private void OnGoSettings(object sender, RoutedEventArgs e)
     {
         var vm = App.Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
-        var win = new SettingsWindow(vm) { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new SettingsWindow(vm) { Owner = this });
     }
 
     private void OnGoManual(object sender, RoutedEventArgs e)
     {
-        var win = new ManualWindow { Owner = this };
-        win.Show();
+        App.ShowSingle(() => new ManualWindow { Owner = this });
     }
 
     private void RenderComparisonChart()

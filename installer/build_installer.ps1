@@ -6,26 +6,33 @@ $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $projectRoot = "$scriptPath\.."
 $installerDir = $scriptPath
 $publishDir = "$projectRoot\publish_final"
-$outputExe = "$installerDir\CoinCraftSetup_v3.exe"
+$outputExe = "$installerDir\SetupCoinCraft.exe"
 
 Write-Host "=== Iniciando Build do Instalador CoinCraft ===" -ForegroundColor Cyan
 
 # 1. Limpeza de versões anteriores e duplicatas
 Write-Host "1. Verificando versões antigas..."
 if (Test-Path $outputExe) {
-    Remove-Item $outputExe -Force
-    Write-Host "   Removido instalador anterior." -ForegroundColor Yellow
+    try {
+        Remove-Item $outputExe -Force -ErrorAction Stop
+        Write-Host "   Removido instalador anterior." -ForegroundColor Yellow
+    } catch {
+        Write-Warning "   Não foi possível remover o instalador anterior (em uso). Prosseguindo."
+    }
 }
 
-# Remove quaisquer arquivos com padrão de versão antiga (ex: *_v3.exe, *_v4.exe)
-Get-ChildItem "$installerDir\InstalarCoinCraft_Setup_*.exe" | Remove-Item -Force -Verbose
+# Remove quaisquer arquivos com padrão de versão antiga
+Get-ChildItem "$installerDir\CoinCraftSetup_*.exe" | Remove-Item -Force -Verbose -ErrorAction SilentlyContinue
+Get-ChildItem "$installerDir\InstalarCoinCraft_*.exe" | Remove-Item -Force -Verbose -ErrorAction SilentlyContinue
 if (Test-Path "$installerDir\CoinCraftSetup.exe") { Remove-Item "$installerDir\CoinCraftSetup.exe" -Force -Verbose }
 Get-ChildItem "$installerDir\Output" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse
 
 # 2. Publicação do Projeto .NET
 Write-Host "2. Publicando aplicação .NET..."
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
-dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -o $publishDir /p:DebugType=None /p:DebugSymbols=false
+#dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -o $publishDir /p:DebugType=None /p:DebugSymbols=false
+# Publica x86 self-contained para garantir que o instalador tenha todos os binários
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDir --self-contained true /p:DebugType=None /p:DebugSymbols=false
 
 if (-not (Test-Path "$publishDir\CoinCraft.App.exe")) {
     Write-Error "Falha na publicação. Executável não encontrado."

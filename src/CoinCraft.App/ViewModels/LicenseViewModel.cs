@@ -35,7 +35,7 @@ namespace CoinCraft.App.ViewModels
             HardwareId = _licensingService.CurrentFingerprint;
             if (string.IsNullOrEmpty(HardwareId))
             {
-                HardwareId = MachineIdProvider.ComputeFingerprint();
+                HardwareId = HardwareHelper.GetHardwareId();
                 if (string.IsNullOrEmpty(HardwareId)) HardwareId = "HWID-GENERICO-FALLBACK";
             }
 

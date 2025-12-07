@@ -33,10 +33,10 @@ public partial class SettingsWindow : Window
 
     // Navigation
     private void OnGoDashboard(object sender, RoutedEventArgs e) { Close(); }
-    private void OnGoTransactions(object sender, RoutedEventArgs e) { new TransactionsWindow { Owner = Owner }.Show(); Close(); }
-    private void OnGoAccounts(object sender, RoutedEventArgs e) { new AccountsWindow { Owner = Owner }.Show(); Close(); }
-    private void OnGoCategories(object sender, RoutedEventArgs e) { new CategoriesWindow { Owner = Owner }.Show(); Close(); }
-    private void OnGoRecurring(object sender, RoutedEventArgs e) { new RecurringWindow { Owner = Owner }.Show(); Close(); }
-    private void OnGoImport(object sender, RoutedEventArgs e) { new ImportWindow { Owner = Owner }.Show(); Close(); }
+    private void OnGoTransactions(object sender, RoutedEventArgs e) { App.ShowSingle(() => new TransactionsWindow { Owner = Owner }); Close(); }
+    private void OnGoAccounts(object sender, RoutedEventArgs e) { App.ShowSingle(() => new AccountsWindow { Owner = Owner }); Close(); }
+    private void OnGoCategories(object sender, RoutedEventArgs e) { App.ShowSingle(() => new CategoriesWindow { Owner = Owner }); Close(); }
+    private void OnGoRecurring(object sender, RoutedEventArgs e) { App.ShowSingle(() => new RecurringWindow { Owner = Owner }); Close(); }
+    private void OnGoImport(object sender, RoutedEventArgs e) { App.ShowSingle(() => new ImportWindow { Owner = Owner }); Close(); }
     private void OnGoSettings(object sender, RoutedEventArgs e) { /* Already here */ }
 }

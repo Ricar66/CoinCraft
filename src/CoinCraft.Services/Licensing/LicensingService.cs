@@ -48,17 +48,17 @@ namespace CoinCraft.Services.Licensing
 
     public sealed class LicensingService : ILicensingService, IDisposable
     {
-        private readonly ILicenseApiClient _apiClient;
-        private readonly Timer _timer;
-        private LicenseState _state = LicenseState.Unknown;
-        private License? _license;
+        private readonly LicenseService _licenseService;
         private readonly string _fingerprint;
+        private readonly Timer _timer;
+        private License? _license;
+        private LicenseState _state = LicenseState.Unknown;
 
-        public LicensingService(ILicenseApiClient apiClient)
+        public LicensingService(LicenseService licenseService)
         {
-            _apiClient = apiClient;
-            _fingerprint = HardwareHelper.ComputeHardwareId();
-            _timer = new Timer(async _ => await PeriodicValidateAsync(), null, Timeout.Infinite, Timeout.Infinite);
+            _licenseService = licenseService;
+            _fingerprint = HardwareHelper.GetHardwareId();
+            _timer = new Timer(_ => _ = PeriodicValidateAsync(), null, Timeout.Infinite, Timeout.Infinite);
         }
 
         public LicenseState CurrentState => _state;
@@ -71,60 +71,47 @@ namespace CoinCraft.Services.Licensing
             var existing = LicensingStorage.Load();
             if (existing != null)
             {
-                var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint);
-                UpdateState(r.License, r.IsValid);
-                if (r.IsValid)
+                // Verifica a licença usando o novo serviço
+                var result = await _licenseService.VerificarLicenca(existing.Email, _fingerprint);
+                
+                if (result)
                 {
+                    UpdateState(new License { LicenseKey = existing.LicenseKey }, true);
                     StartPeriodicValidation();
-                    return r;
+                    return new LicenseValidationResult { IsValid = true, License = new License { LicenseKey = existing.LicenseKey } };
                 }
                 else if (AllowOffline() && TryVerifyOffline(existing.LicenseKey))
                 {
-                    UpdateState(r.License, true);
+                    UpdateState(new License { LicenseKey = existing.LicenseKey }, true);
                     StartPeriodicValidation();
-                    return new LicenseValidationResult { IsValid = true, License = r.License, Message = "Offline valid" };
+                    return new LicenseValidationResult { IsValid = true, License = new License { LicenseKey = existing.LicenseKey }, Message = "Offline valid" };
                 }
             }
 
-            // Ask user/app for license key
-            var key = await licenseKeyProvider();
-            if (string.IsNullOrWhiteSpace(key))
-                return new LicenseValidationResult { IsValid = false, Message = "Nenhuma licença fornecida" };
-
-            var result = await _apiClient.ValidateLicenseAsync(key!, _fingerprint);
-            if (!result.IsValid)
+            // Se chegou aqui, não há licença válida local. Tenta usar chave fornecida (offline).
+            try
             {
-                if (AllowOffline() && TryVerifyOffline(key!))
+                var providedKey = await (licenseKeyProvider?.Invoke() ?? Task.FromResult<string?>(null));
+                if (!string.IsNullOrWhiteSpace(providedKey) && AllowOffline() && TryVerifyOffline(providedKey.Trim()))
                 {
-                    LicensingStorage.Save(new InstallationRecord
+                    var record = new InstallationRecord
                     {
-                        LicenseKey = key!,
+                        LicenseKey = providedKey.Trim(),
+                        Email = existing?.Email ?? string.Empty,
                         MachineFingerprint = _fingerprint,
-                        InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O")
-                    });
-                    UpdateState(result.License, true);
+                        InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
+                        Notes = "Offline activation"
+                    };
+                    LicensingStorage.Save(record);
+                    UpdateState(new License { LicenseKey = record.LicenseKey }, true);
                     StartPeriodicValidation();
-                    return new LicenseValidationResult { IsValid = true, License = result.License, Message = "Offline valid" };
+                    return new LicenseValidationResult { IsValid = true, License = new License { LicenseKey = record.LicenseKey }, Message = "Offline valid" };
                 }
-                UpdateState(result.License, false);
-                return result;
             }
+            catch { }
 
-            // Register installation and persist locally
-            var ok = await _apiClient.RegisterInstallationAsync(key!, _fingerprint);
-            if (!ok)
-                return new LicenseValidationResult { IsValid = false, Message = "Falha ao registrar instalação" };
-
-            LicensingStorage.Save(new InstallationRecord
-            {
-                LicenseKey = key!,
-                MachineFingerprint = _fingerprint,
-                InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O")
-            });
-
-            UpdateState(result.License, true);
-            StartPeriodicValidation();
-            return result;
+            // Fluxo online deve ser conduzido pela UI (ActivationMethodWindow)
+            return new LicenseValidationResult { IsValid = false, Message = "Nenhuma licença válida encontrada." };
         }
 
         public async Task<LicenseValidationResult> ValidateExistingAsync()
@@ -133,22 +120,30 @@ namespace CoinCraft.Services.Licensing
             if (existing == null)
                 return new LicenseValidationResult { IsValid = false, Message = "Sem licença local" };
 
-            var r = await _apiClient.ValidateLicenseAsync(existing.LicenseKey, _fingerprint);
-            UpdateState(r.License, r.IsValid);
-            if (!r.IsValid && AllowOffline() && TryVerifyOffline(existing.LicenseKey))
+            var result = await _licenseService.VerificarLicenca(existing.Email, _fingerprint);
+            
+            if (result)
             {
-                UpdateState(r.License, true);
-                return new LicenseValidationResult { IsValid = true, License = r.License, Message = "Offline valid" };
+                UpdateState(new License { LicenseKey = existing.LicenseKey }, true);
+                return new LicenseValidationResult { IsValid = true, License = new License { LicenseKey = existing.LicenseKey } };
             }
-            return r;
+            
+            if (AllowOffline() && TryVerifyOffline(existing.LicenseKey))
+            {
+                UpdateState(new License { LicenseKey = existing.LicenseKey }, true);
+                return new LicenseValidationResult { IsValid = true, License = new License { LicenseKey = existing.LicenseKey }, Message = "Offline valid" };
+            }
+            
+            UpdateState(null, false);
+            return new LicenseValidationResult { IsValid = false, Message = "Licença expirada ou inválida" };
         }
 
         public async Task<bool> TransferAsync(string toFingerprint)
         {
-            var existing = LicensingStorage.Load();
-            if (existing == null || string.IsNullOrWhiteSpace(existing.LicenseKey)) return false;
-            var ok = await _apiClient.TransferLicenseAsync(existing.LicenseKey, _fingerprint, toFingerprint);
-            return ok;
+            // Funcionalidade de transferência via API ainda não implementada no novo backend
+            // Retorna false por enquanto
+            await Task.Yield();
+            return false;
         }
 
         private void UpdateState(License? license, bool valid)

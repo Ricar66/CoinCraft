@@ -24,5 +24,6 @@
     <ProjectReference Include="..\CoinCraft.App\CoinCraft.App.csproj" />
     <ProjectReference Include="..\CoinCraft.Infrastructure\CoinCraft.Infrastructure.csproj" />
     <ProjectReference Include="..\CoinCraft.Domain\CoinCraft.Domain.csproj" />
+    <ProjectReference Include="..\CoinCraft.Services\CoinCraft.Services.csproj" />
   </ItemGroup>
 </Project>

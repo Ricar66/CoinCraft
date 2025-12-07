@@ -12,6 +12,7 @@ namespace CoinCraft.App.ViewModels
     {
         private readonly ILicensingService _licensingService;
         private readonly HttpClient _httpClient;
+        private readonly LicenseService _apiClient;
         
         // Mantido para compatibilidade, embora não usado diretamente aqui
         private const string ApiUrl = "https://codecraftgenz.com.br/";
@@ -28,10 +29,11 @@ namespace CoinCraft.App.ViewModels
         [ObservableProperty]
         private bool _isLoading;
 
-        public ActivationMethodViewModel(ILicensingService licensingService, HttpClient httpClient)
+        public ActivationMethodViewModel(ILicensingService licensingService, HttpClient httpClient, LicenseService? apiClient = null)
         {
             _licensingService = licensingService;
             _httpClient = httpClient;
+            _apiClient = apiClient ?? new LicenseService();
         }
 
         [RelayCommand]
@@ -69,41 +71,18 @@ namespace CoinCraft.App.ViewModels
             try
             {
                 var hwId = HardwareHelper.GetHardwareId();
-                var svc = new LicenseService();
                 
-                // 1. Tenta verificar diretamente
-                var verifyResult = await svc.VerifyLicenseAsync(Email, hwId);
+                // 1. Tenta verificar diretamente usando o novo serviço simplificado
+                var success = await _apiClient.VerificarLicenca(Email, hwId);
                 
-                if (verifyResult.Success)
+                if (success)
                 {
-                    await FinishActivation(verifyResult.LicenseKey);
+                    await FinishActivation(null); // Key não é mais retornada no modelo simples
                     return;
-                }
-
-                // 2. Se falhar por limite (LICENSE_LIMIT), tentamos o fluxo de Claim
-                if (verifyResult.Code == "LICENSE_LIMIT")
-                {
-                    StatusMessage = "Limite atingido. Tentando ativar nova licença...";
-                    var claimedKey = await svc.ClaimByEmailAsync(Email, hwId);
-                    
-                    if (!string.IsNullOrEmpty(claimedKey))
-                    {
-                        // Se conseguiu reivindicar, verificamos novamente para confirmar
-                        var retry = await svc.VerifyLicenseAsync(Email, hwId);
-                        if (retry.Success)
-                        {
-                            await FinishActivation(claimedKey);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        StatusMessage = "Limite de ativações atingido ou compra não encontrada. Use 'Tenho uma chave' ou compre uma nova licença.";
-                    }
                 }
                 else
                 {
-                    StatusMessage = verifyResult.Message ?? "Licença não encontrada ou inválida.";
+                    StatusMessage = "Licença não encontrada ou limite atingido.";
                 }
             }
             catch (Exception ex)
@@ -118,31 +97,28 @@ namespace CoinCraft.App.ViewModels
 
         private async Task FinishActivation(string? licenseKey)
         {
-            // Salvar e-mail localmente
-            try
+            // Salvar informações de licença (Email e Opcionalmente a Key)
+            var hwId = HardwareHelper.GetHardwareId();
+            var record = new InstallationRecord
             {
-                var emailFile = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoinCraft", "license.dat");
-                var dir = System.IO.Path.GetDirectoryName(emailFile)!;
-                if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
-                System.IO.File.WriteAllText(emailFile, Email);
-            }
-            catch { }
-
-            // Salvar chave de licença se disponível (usando o sistema seguro existente)
-            if (!string.IsNullOrEmpty(licenseKey))
+                LicenseKey = licenseKey ?? string.Empty,
+                Email = Email,
+                MachineFingerprint = hwId,
+                InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
+                Notes = $"Activated via email: {Email}"
+            };
+            
+            try 
             {
-                var hwId = HardwareHelper.GetHardwareId();
-                var record = new InstallationRecord
-                {
-                    LicenseKey = licenseKey,
-                    MachineFingerprint = hwId,
-                    InstalledAtIso8601 = DateTimeOffset.UtcNow.ToString("O"),
-                    Notes = $"Activated via email: {Email}"
-                };
                 LicensingStorage.Save(record);
                 
                 // Tenta revalidar o serviço principal para atualizar o estado da aplicação
                 await _licensingService.ValidateExistingAsync();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Erro ao salvar licença: {ex.Message}";
+                return;
             }
 
             StatusMessage = "Licença válida neste dispositivo.";

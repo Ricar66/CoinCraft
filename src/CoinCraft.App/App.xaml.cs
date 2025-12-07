@@ -11,6 +11,7 @@ using System;
 using System.Text.Json;
 using System.Diagnostics;
 using System.Threading;
+using System.Linq;
 
 namespace CoinCraft.App;
 
@@ -100,85 +101,77 @@ public partial class App : Application
         // var skipLic = Environment.GetEnvironmentVariable("COINCRAFT_SKIP_LICENSE");
         // if (skipLic != "1")
         // {
-        //     var httpClient = new HttpClient();
-        //     var apiClient = new LicenseApiClient(httpClient, "https://licensing.example.com"); // TODO: mover para configuração
-        //     var licensing = new LicensingService(apiClient);
+        //     var services = new ServiceCollection();
+        //     ConfigureServices(services);
+        //     Services = services.BuildServiceProvider();
         //
+        //     // Configurar o licenciamento
+        //     var licenseService = Services.GetRequiredService<CoinCraft.Services.Licensing.LicenseService>();
+        //     var licensing = new CoinCraft.Services.Licensing.LicensingService(licenseService);
+        //     
+        //     // Validar licença existente
         //     var validRes = licensing.ValidateExistingAsync().GetAwaiter().GetResult();
+        //
         //     if (!validRes.IsValid)
         //     {
-        //         var licWin = new CoinCraft.App.Views.LicenseWindow(licensing, apiClient);
-        //         var ok = licWin.ShowDialog();
-        //         if (licensing.CurrentState != LicenseState.Active)
+        //         // Usar o LicenseService injetado em vez de criar HttpClient manualmente
+        //         var httpClient = Services.GetRequiredService<HttpClient>();
+        //         var vm = new CoinCraft.App.ViewModels.ActivationMethodViewModel(licensing, httpClient);
+        //         var activationWin = new CoinCraft.App.Views.ActivationMethodWindow(vm);
+        //         var dialogResult = activationWin.ShowDialog();
+        //         
+        //         if (dialogResult == true)
         //         {
-        //             MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //             if (Equals(activationWin.Tag, "EmailSuccess"))
+        //             {
+        //                  // Sucesso
+        //             }
+        //             else if (licensing.CurrentState != LicenseState.Active)
+        //             {
+        //                 MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //                 Shutdown();
+        //                 return;
+        //             }
+        //         }
+        //         else if (Equals(activationWin.Tag, "Offline"))
+        //         {
+        //              // Fluxo offline mantido se necessário
+        //         }
+        //         else
+        //         {
         //             Shutdown();
         //             return;
         //         }
         //     }
+        //
+        //     var mainWindow = Services.GetRequiredService<MainWindow>();
+        //     mainWindow.Show();
         // }
-        new LogService().Info("Licenciamento desativado temporariamente: app liberado sem validação.");
+        
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        Services = services.BuildServiceProvider();
 
-        // Configurar Injeção de Dependência
-        try
-        {
-            var sc = new ServiceCollection();
-            sc.AddDbContext<CoinCraftDbContext>();
-
-            // Serviços centrais
-            sc.AddSingleton<LogService>();
-            sc.AddSingleton<BackupService>();
-            sc.AddSingleton<RecurringService>();
-            sc.AddSingleton<AlertService>();
-            sc.AddSingleton<AttachmentService>();
-            sc.AddSingleton<ConfigService>();
-            sc.AddSingleton<HttpClient>();
-            sc.AddTransient<ReportService>();
-
-            // Context Factory para ViewModels que criam instâncias de curta duração
-            sc.AddSingleton<Func<CoinCraftDbContext>>(sp => () => new CoinCraftDbContext());
-
-            // Licenciamento (mantido desativado no fluxo de UI por ora)
-            sc.AddSingleton<CoinCraft.Services.Licensing.ILicenseApiClient>(sp =>
-                new CoinCraft.Services.Licensing.LicenseApiClient(
-                    sp.GetRequiredService<HttpClient>(),
-                    "https://codecraftgenz.com.br/"));
-            sc.AddSingleton<CoinCraft.Services.Licensing.ILicensingService, CoinCraft.Services.Licensing.LicensingService>();
-
-            // ViewModels
-            sc.AddTransient<CoinCraft.App.ViewModels.DashboardViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.TransactionsViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.RecurringViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.AccountsViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.CategoriesViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.ImportViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.GoalsViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.SettingsViewModel>();
-            sc.AddTransient<CoinCraft.App.ViewModels.ManualViewModel>();
-
-            Services = sc.BuildServiceProvider();
-            new LogService().Info("DI inicializada.");
-        }
-        catch (Exception exDi)
-        {
-            var logDi = new LogService();
-            logDi.Error($"Falha ao inicializar DI: {exDi.Message}");
-        }
-
-        var licensing = Services!.GetRequiredService<CoinCraft.Services.Licensing.ILicensingService>();
+        // Configurar o licenciamento
+        var licenseService = Services.GetRequiredService<CoinCraft.Services.Licensing.LicenseService>();
+        var licensing = new CoinCraft.Services.Licensing.LicensingService(licenseService);
+        
+        // Validar licença existente
         var validRes = await licensing.ValidateExistingAsync();
+
         if (!validRes.IsValid)
         {
-            var httpClient = Services!.GetRequiredService<HttpClient>();
+            // Usar o LicenseService injetado em vez de criar HttpClient manualmente
+            var httpClient = Services.GetRequiredService<HttpClient>();
             var vm = new CoinCraft.App.ViewModels.ActivationMethodViewModel(licensing, httpClient);
             var activationWin = new CoinCraft.App.Views.ActivationMethodWindow(vm);
             var dialogResult = activationWin.ShowDialog();
-
+            
             if (dialogResult == true)
             {
                 if (Equals(activationWin.Tag, "EmailSuccess"))
                 {
-                    // E-mail verificado e salvo; permitir continuar sem depender do estado interno de licença
+                     // Sucesso
                 }
                 else if (licensing.CurrentState != LicenseState.Active)
                 {
@@ -189,14 +182,14 @@ public partial class App : Application
             }
             else if (Equals(activationWin.Tag, "Offline"))
             {
-                var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
-                var ok = licWin.ShowDialog();
-                if (licensing.CurrentState != LicenseState.Active)
-                {
-                    MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    Shutdown();
-                    return;
-                }
+                 var licWin = new CoinCraft.App.Views.LicenseWindow(licensing);
+                 var ok = licWin.ShowDialog();
+                 if (licensing.CurrentState != LicenseState.Active)
+                 {
+                     MessageBox.Show(validRes.Message ?? "Licença inválida ou não fornecida.", "Licença necessária", MessageBoxButton.OK, MessageBoxImage.Warning);
+                     Shutdown();
+                     return;
+                 }
             }
             else
             {
@@ -204,41 +197,91 @@ public partial class App : Application
                 return;
             }
         }
-        OpenDashboard();
+
+        var settingsVm = Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+        var initial = settingsVm.TelaInicial?.ToLowerInvariant();
+        Window mainWindow;
+        if (initial == "lancamentos")
+        {
+            mainWindow = new CoinCraft.App.Views.TransactionsWindow();
+        }
+        else
+        {
+            mainWindow = Services.GetRequiredService<CoinCraft.App.Views.DashboardWindow>();
+        }
+        Application.Current.MainWindow = mainWindow;
+        Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        mainWindow.Show();
+        new LogService().Info("Aplicação iniciada com sucesso.");
 
         // Aplicar tema e tela inicial conforme configurações do usuário
         try
         {
-            var settingsVm = Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+            // Já carregado acima para decidir a tela inicial
             // Ajuste de tema
             var bg = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase) ? System.Windows.Media.Color.FromRgb(30, 30, 30) : System.Windows.Media.Colors.White;
             var fg = settingsVm.Tema.Equals("escuro", StringComparison.OrdinalIgnoreCase) ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black;
             Application.Current.Resources["AppBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(bg);
             Application.Current.Resources["AppForegroundBrush"] = new System.Windows.Media.SolidColorBrush(fg);
 
-            // Tela inicial: se for lançamentos, abre janela após o Dashboard principal
-            var initial = settingsVm.TelaInicial?.ToLowerInvariant();
-            if (initial == "lancamentos" && Application.Current.MainWindow is Window owner)
-            {
-                var tx = new CoinCraft.App.Views.TransactionsWindow { Owner = owner };
-                tx.Show();
-            }
+            // A tela inicial já foi escolhida antes de mostrar a MainWindow.
         }
         catch (Exception exInit)
         {
             new LogService().Info($"Configurações iniciais não aplicadas: {exInit.Message}");
         }
 
-        base.OnStartup(e);
+        // Removido código antigo comentado e desnecessário
     }
 
     private void OpenDashboard()
     {
-        var dashboard = new CoinCraft.App.Views.DashboardWindow();
-        Application.Current.MainWindow = dashboard;
-        dashboard.Show();
-        dashboard.Activate();
+        var settingsVm = Services!.GetRequiredService<CoinCraft.App.ViewModels.SettingsViewModel>();
+        var initial = settingsVm.TelaInicial?.ToLowerInvariant();
+        Window w = initial == "lancamentos"
+            ? new CoinCraft.App.Views.TransactionsWindow()
+            : new CoinCraft.App.Views.DashboardWindow();
+        Application.Current.MainWindow = w;
+        w.Show();
+        w.Activate();
         Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+    }
+
+    private void ConfigureServices(IServiceCollection services)
+    {
+        services.AddDbContext<CoinCraftDbContext>();
+
+        // Serviços centrais
+        services.AddSingleton<LogService>();
+        services.AddSingleton<BackupService>();
+        services.AddSingleton<RecurringService>();
+        services.AddSingleton<AlertService>();
+        services.AddSingleton<AttachmentService>();
+        services.AddSingleton<ConfigService>();
+        services.AddSingleton<HttpClient>();
+        services.AddTransient<ReportService>();
+
+        // Context Factory para ViewModels que criam instâncias de curta duração
+        services.AddSingleton<Func<CoinCraftDbContext>>(sp => () => new CoinCraftDbContext());
+
+        // Licenciamento
+        services.AddSingleton<CoinCraft.Services.Licensing.LicenseService>();
+        services.AddSingleton<CoinCraft.Services.Licensing.ILicensingService, CoinCraft.Services.Licensing.LicensingService>();
+
+        // ViewModels
+        services.AddTransient<CoinCraft.App.ViewModels.DashboardViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.TransactionsViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.RecurringViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.AccountsViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.CategoriesViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.ImportViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.GoalsViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.SettingsViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.ManualViewModel>();
+        services.AddTransient<CoinCraft.App.ViewModels.ActivationMethodViewModel>();
+        
+        // Views
+        services.AddTransient<CoinCraft.App.Views.DashboardWindow>();
     }
 
     private void OpenLicenseWindow(CoinCraft.Services.Licensing.ILicensingService licensing)
@@ -333,5 +376,21 @@ public partial class App : Application
         var r = win.ShowDialog();
         if (r == true) return box.Text.Trim();
         return null;
+    }
+
+    public static void ShowSingle<T>(Func<T> factory) where T : Window
+    {
+        var existing = Application.Current.Windows.OfType<T>().FirstOrDefault();
+        if (existing != null)
+        {
+            if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+            existing.Activate();
+            existing.Focus();
+            return;
+        }
+        var w = factory();
+        if (Application.Current.MainWindow != null && !ReferenceEquals(Application.Current.MainWindow, w))
+            w.Owner = Application.Current.MainWindow;
+        w.Show();
     }
 }

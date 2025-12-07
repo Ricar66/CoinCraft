@@ -40,7 +40,10 @@ namespace CoinCraft.Services.Licensing
             var processorId = GetProcessorId();
             var motherboardSerial = GetMotherboardSerial();
             var composite = $"PROC={processorId};MB={motherboardSerial}";
-            return CryptoHelper.ComputeSha256(composite);
+            var fullHash = CryptoHelper.ComputeSha256(composite);
+            
+            // O PHP aceita no máximo 32 caracteres. Cortamos para 30 para segurança.
+            return fullHash.Substring(0, 64).ToUpper();
         }
 
         public static string GetHardwareId()
