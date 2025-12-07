@@ -4,12 +4,32 @@ obj/
 *.user
 publish/
 publish_final/
+publish_final_x64/
+publish_final_x86/
 dist/
 *.pdb
 private.xml
+private.pem
 
+# Ignore executables but allow source code
 *.exe
+*.dll
+*.so
+*.dylib
 
-admin_publish/
-scripts/
-installer/
+# Database
+*.db
+*.db-shm
+*.db-wal
+CoinCraft.db
+
+# Installer output but keep scripts
+installer/Output/
+installer/*.exe
+
+# Logs
+*.log
+
+# Temp
+tmp/
+temp/

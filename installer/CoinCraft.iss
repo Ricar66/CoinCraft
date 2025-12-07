@@ -53,8 +53,12 @@ Source: "..\publish_final\x64\*"; DestDir: "{app}"; Flags: ignoreversion recurse
 Source: "..\publish_final\x86\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: UseX86
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 ; Pré-requisitos: runtime .NET Desktop 8.0 (incluídos para instalação silenciosa)
-Source: ".\Prereqs\windowsdesktop-runtime-8.0-x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: UseX64
-Source: ".\Prereqs\windowsdesktop-runtime-8.0-x86.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: UseX86
+#ifdef IncludePrereqsX64
+Source: ".\Prereqs\windowsdesktop-runtime-8.0-x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: UseX64 and PreReqExistsX64()
+#endif
+#ifdef IncludePrereqsX86
+Source: ".\Prereqs\windowsdesktop-runtime-8.0-x86.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: UseX86 and PreReqExistsX86()
+#endif
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\coincraft.ico"
@@ -62,8 +66,12 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 ; Instala silenciosamente o .NET Desktop Runtime 8.0, se ausente
-Filename: "{tmp}\windowsdesktop-runtime-8.0-x64.exe"; Parameters: "/quiet /norestart"; StatusMsg: "Instalando .NET Desktop Runtime 8.0 (x64)..."; Flags: runhidden waituntilterminated; Check: UseX64 and (not HasDotnetDesktop80Arch(HKLM64, 'x64'))
-Filename: "{tmp}\windowsdesktop-runtime-8.0-x86.exe"; Parameters: "/quiet /norestart"; StatusMsg: "Instalando .NET Desktop Runtime 8.0 (x86)..."; Flags: runhidden waituntilterminated; Check: UseX86 and (not HasDotnetDesktop80Arch(HKLM32, 'x86'))
+#ifdef IncludePrereqsX64
+Filename: "{tmp}\windowsdesktop-runtime-8.0-x64.exe"; Parameters: "/quiet /norestart"; StatusMsg: "Instalando .NET Desktop Runtime 8.0 (x64)..."; Flags: runhidden waituntilterminated; Check: UseX64 and PreReqExistsX64() and (not HasDotnetDesktop80X64())
+#endif
+#ifdef IncludePrereqsX86
+Filename: "{tmp}\windowsdesktop-runtime-8.0-x86.exe"; Parameters: "/quiet /norestart"; StatusMsg: "Instalando .NET Desktop Runtime 8.0 (x86)..."; Flags: runhidden waituntilterminated; Check: UseX86 and PreReqExistsX86() and (not HasDotnetDesktop80X86())
+#endif
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall skipifsilent
 
 [Code]
@@ -82,21 +90,16 @@ begin
   Result := (not IsWin64) or IsForceX86;
 end;
 
-function HasDotnetDesktop80X64(): Boolean;
+function PreReqExistsX64(): Boolean;
 begin
-  if IsWin64 then
-    Result := HasDotnetDesktop80Arch(HKLM64, 'x64')
-  else
-    Result := False;
+  Result := FileExists(ExpandConstant('.\Prereqs\windowsdesktop-runtime-8.0-x64.exe'));
 end;
 
-function HasDotnetDesktop80X86(): Boolean;
+function PreReqExistsX86(): Boolean;
 begin
-  if IsWin64 then
-    Result := HasDotnetDesktop80Arch(HKLM64, 'x86')
-  else
-    Result := HasDotnetDesktop80Arch(HKLM32, 'x86');
+  Result := FileExists(ExpandConstant('.\Prereqs\windowsdesktop-runtime-8.0-x86.exe'));
 end;
+
 
 function GetDotnetDesktop80UrlX64(): String;
 begin
@@ -132,6 +135,22 @@ begin
   begin
     Log('Chave ausente: ' + baseKey);
   end;
+end;
+
+function HasDotnetDesktop80X64(): Boolean;
+begin
+  if IsWin64 then
+    Result := HasDotnetDesktop80Arch(HKLM64, 'x64')
+  else
+    Result := False;
+end;
+
+function HasDotnetDesktop80X86(): Boolean;
+begin
+  if IsWin64 then
+    Result := HasDotnetDesktop80Arch(HKLM64, 'x86')
+  else
+    Result := HasDotnetDesktop80Arch(HKLM32, 'x86');
 end;
 
 function HasDotnetDesktop80(): Boolean;
