@@ -5,21 +5,17 @@ $ErrorActionPreference = "Stop"
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $projectRoot = "$scriptPath\.."
 $installerDir = $scriptPath
-$publishDir = "$projectRoot\publish_final"
-$outputExe = "$installerDir\SetupCoinCraft.exe"
+$publishUnified = "$projectRoot\publish_final"
+$publishDirX86 = "$publishUnified\x86"
+$publishDirX64 = "$publishUnified\x64"
+$outputExe = "$installerDir\Output\SetupCoinCraft.exe"
 
 Write-Host "=== Iniciando Build do Instalador CoinCraft ===" -ForegroundColor Cyan
 
 # 1. Limpeza de versões anteriores e duplicatas
 Write-Host "1. Verificando versões antigas..."
-if (Test-Path $outputExe) {
-    try {
-        Remove-Item $outputExe -Force -ErrorAction Stop
-        Write-Host "   Removido instalador anterior." -ForegroundColor Yellow
-    } catch {
-        Write-Warning "   Não foi possível remover o instalador anterior (em uso). Prosseguindo."
-    }
-}
+Get-ChildItem "$installerDir\SetupCoinCraft_*.exe" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+if (Test-Path $outputExe) { Remove-Item $outputExe -Force -ErrorAction SilentlyContinue }
 
 # Remove quaisquer arquivos com padrão de versão antiga
 Get-ChildItem "$installerDir\CoinCraftSetup_*.exe" | Remove-Item -Force -Verbose -ErrorAction SilentlyContinue
@@ -28,20 +24,28 @@ if (Test-Path "$installerDir\CoinCraftSetup.exe") { Remove-Item "$installerDir\C
 Get-ChildItem "$installerDir\Output" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse
 
 # 2. Publicação do Projeto .NET
-Write-Host "2. Publicando aplicação .NET..."
-if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
-#dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -o $publishDir /p:DebugType=None /p:DebugSymbols=false
-# Publica x86 self-contained para garantir que o instalador tenha todos os binários
-dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDir --self-contained true /p:DebugType=None /p:DebugSymbols=false
+Write-Host "2. Publicando aplicação .NET e unificando estrutura..."
+if (Test-Path $publishUnified) { Remove-Item $publishUnified -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $publishDirX86 | Out-Null
+New-Item -ItemType Directory -Force -Path $publishDirX64 | Out-Null
 
-if (-not (Test-Path "$publishDir\CoinCraft.App.exe")) {
-    Write-Error "Falha na publicação. Executável não encontrado."
-}
+# Pastas antigas (serão removidas se existirem)
+$oldX86 = "$projectRoot\publish_final_x86"
+$oldX64 = "$projectRoot\publish_final_x64"
+
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x86 -o $publishDirX86 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+dotnet publish "$projectRoot\src\CoinCraft.App\CoinCraft.App.csproj" -c Release -r win-x64 -o $publishDirX64 /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false
+
+
+if (-not (Test-Path "$publishDirX86\CoinCraft.App.exe")) { Write-Error "Falha na publicação x86. Executável não encontrado." }
+if (-not (Test-Path "$publishDirX64\CoinCraft.App.exe")) { Write-Error "Falha na publicação x64. Executável não encontrado." }
 
 # Verificar se public.xml foi copiado
-if (-not (Test-Path "$publishDir\public.xml")) {
-    Write-Warning "public.xml não encontrado no publish. Copiando manualmente..."
-    Copy-Item "$projectRoot\src\CoinCraft.App\public.xml" "$publishDir\public.xml"
+foreach ($d in @($publishDirX86, $publishDirX64)) {
+    if (-not (Test-Path "$d\public.xml")) {
+        Write-Warning "public.xml não encontrado em $d. Copiando manualmente..."
+        Copy-Item "$projectRoot\src\CoinCraft.App\public.xml" "$d\public.xml" -Force
+    }
 }
 
 # 3. Compilação do Instalador (Inno Setup)
@@ -74,6 +78,8 @@ if (Test-Path $outputExe) {
     Write-Host "SUCESSO: Instalador gerado em:" -ForegroundColor Green
     Write-Host "   $outputExe" -ForegroundColor Green
     Write-Host "   Tamanho: $(("{0:N2} MB" -f ((Get-Item $outputExe).Length / 1MB)))"
+    Write-Host "   Conteúdo x64: $(Get-ChildItem $publishDirX64 | Measure-Object | Select-Object -ExpandProperty Count) itens"
+    Write-Host "   Conteúdo x86: $(Get-ChildItem $publishDirX86 | Measure-Object | Select-Object -ExpandProperty Count) itens"
 } else {
     Write-Error "FALHA: O instalador não foi gerado."
 }

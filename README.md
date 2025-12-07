@@ -16,11 +16,11 @@ Para executar o CoinCraft, seu computador deve atender aos seguintes requisitos 
 - **Processador:** Intel Core i3 ou equivalente (Recomendado: i5 ou superior).
 - **Memória RAM:** 4 GB (Recomendado: 8 GB).
 - **Espaço em Disco:** 100 MB livres.
-- **Framework:** .NET 8.0 (já incluído no instalador).
+- **Framework:** .NET Desktop Runtime 8.0 instalado no sistema.
 
 ## 3. Instalação e Configuração
-1.  **Baixe o Instalador:** Utilize o arquivo `CoinCraftSetup.exe` fornecido.
-2.  **Execute a Instalação:** Dê um duplo clique no instalador e siga as instruções na tela.
+1.  **Baixe o Instalador:** Utilize o arquivo `SetupCoinCraft.exe` (instalador único com suporte a x64 e x86).
+2.  **Execute a Instalação:** Dê um duplo clique no instalador e siga as instruções na tela. A arquitetura do sistema é detectada automaticamente; se necessário, há opção de instalar a versão x86 manualmente.
 3.  **Primeiro Acesso:**
     - Ao abrir o sistema pela primeira vez, o banco de dados local será criado automaticamente.
     - Você poderá cadastrar suas contas iniciais e categorias.
@@ -36,15 +36,16 @@ Para executar o CoinCraft, seu computador deve atender aos seguintes requisitos 
 -   **Manual do Usuário:** Acesse o botão "Ajuda" no menu principal para um guia detalhado dentro do aplicativo.
 
 ## 5. Fluxo de Atualização do Instalador (Desenvolvimento)
-Para manter a consistência e evitar duplicidade de versões, o processo de geração de novas versões do instalador foi padronizado:
+Para manter a consistência, simplificar distribuição e evitar duplicidade de versões, o processo de geração do instalador foi unificado:
 
-1.  **Localização Única:** O executável final do instalador será sempre gerado em `installer\CoinCraftSetup.exe`.
-2.  **Prevenção de Duplicatas:** O script de build remove automaticamente versões anteriores e arquivos com sufixos de versão (ex: `_v4`).
+1.  **Estrutura Unificada de Publish:** Após o build, os binários são organizados em `publish_final\x64` e `publish_final\x86`.
+2.  **Instalador Único:** O executável final é gerado em `installer\Output\SetupCoinCraft.exe` e inclui ambas arquiteturas com detecção automática.
 3.  **Geração Automatizada:** Utilize o script PowerShell `installer\build_installer.ps1` para gerar uma nova versão. Este script:
-    - Compila o projeto em modo Release.
-    - Executa o compilador Inno Setup.
-    - Garante que apenas o arquivo `CoinCraftSetup.exe` permaneça na pasta.
-4.  **Controle de Versão:** A versão interna do software é definida no arquivo `.iss` e no projeto `.csproj`, mas o nome do arquivo do instalador permanece constante para facilitar a distribuição e links de download.
+    - Publica `win-x64` e `win-x86` como framework-dependent (não self-contained) para reduzir tamanho.
+    - Unifica a estrutura na pasta `publish_final`.
+    - Compila o instalador único via Inno Setup.
+    - Remove artefatos antigos de instaladores duplicados.
+4.  **Controle de Versão:** A versão interna do software é definida no arquivo `.iss` e no projeto `.csproj`. O nome do arquivo do instalador permanece constante para facilitar a distribuição.
 
 ## 6. Atualizações Futuras
 Estamos trabalhando constantemente para melhorar o CoinCraft. Próximas funcionalidades planejadas incluem:
