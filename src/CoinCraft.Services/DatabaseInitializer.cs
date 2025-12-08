@@ -34,10 +34,10 @@ namespace CoinCraft.Services
                 db.Database.Migrate();
                 _log.Info("Migrations aplicadas com sucesso.");
 
-                EnsureSchemaIntegrity(db);
                 ApplyPragmas(db);
                 EnsureRecurringTransactionsTable(db);
                 EnsureCoreTables(db);
+                EnsureSchemaIntegrity(db);
                 ApplyViewsAndSeed(db);
                 VerifyDatabase(db);
             }
@@ -231,6 +231,7 @@ CREATE TABLE IF NOT EXISTS Transactions (
   CategoryId INTEGER NULL,
   Descricao TEXT NULL,
   OpostoAccountId INTEGER NULL,
+  AttachmentPath TEXT NULL,
   FOREIGN KEY (AccountId) REFERENCES Accounts(Id) ON DELETE CASCADE,
   FOREIGN KEY (OpostoAccountId) REFERENCES Accounts(Id),
   FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
