@@ -1,0 +1,28 @@
+# CoinCraft - Requirements & Dependencies
+
+# System Requirements
+OS: Windows 10 (version 19041+) or Windows 11
+Architecture: x64 or x86
+Framework: .NET Desktop Runtime 8.0
+Storage: 100 MB free space
+
+# Development Environment
+SDK: .NET 8.0 SDK
+IDE: Visual Studio 2022 / VS Code / JetBrains Rider
+Installer Compiler: Inno Setup 6+
+
+# Project Dependencies (NuGet Packages)
+
+## CoinCraft.App
+- CommunityToolkit.Mvvm (8.3.2)
+- Microsoft.Extensions.DependencyInjection (8.0.0)
+- LiveChartsCore.SkiaSharpView.WPF (2.0.0-rc6.1)
+
+## CoinCraft.Infrastructure
+- Microsoft.EntityFrameworkCore.Sqlite (8.0.7)
+- Microsoft.EntityFrameworkCore (8.0.7)
+
+## CoinCraft.Services
+- QuestPDF (2024.6.0)
+- System.Management (10.0.0)
+- System.Security.Cryptography.ProtectedData (8.0.0)
